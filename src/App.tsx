@@ -27,6 +27,7 @@ const ExploreScreen = lazy(() => import('./screens/ExploreScreen'))
 const ConversationScreen = lazy(() => import('./screens/ConversationScreen'))
 const VoiceSessionScreen = lazy(() => import('./screens/VoiceSessionScreen'))
 const EEGBrainHealthScreen = lazy(() => import('./screens/EEGBrainHealthScreen'))
+const ThoughtAnalysisScreen = lazy(() => import('./screens/ThoughtAnalysisScreen'))
 
 // Lazy load exercise components
 const QuickCalm = lazy(() => import('./components/exercises/QuickCalm'))
@@ -71,6 +72,7 @@ export type Screen =
   | 'vedicCalm'
   | 'wisdomGita'
   | 'explore'
+  | 'thoughtAnalysis'
 
 const AppContent = () => {
   const { currentUser } = useAuth()
@@ -225,6 +227,8 @@ const AppContent = () => {
         return <WisdomGitaScreen onNavigate={navigateToScreen} />
       case 'explore':
         return <ExploreScreen onNavigate={navigateToScreen} />
+      case 'thoughtAnalysis':
+        return <ThoughtAnalysisScreen onNavigate={navigateToScreen} />
       default:
         return <HomeScreen onNavigate={navigateToScreen} user={user} />
     }

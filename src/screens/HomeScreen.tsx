@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { IoPlay } from 'react-icons/io5'
+import { IoSparkles, IoJournal, IoFitness, IoHeadset, IoAnalytics, IoFlame } from 'react-icons/io5'
 import type { Screen } from '../App'
 import { recommendVideos, type VideoSuggestion } from '../utils/youtubeAI'
-import { getContextualSearchQuery } from '../utils/userContext'
+import { getContextualSearchQuery, saveUserContext } from '../utils/userContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -26,10 +26,23 @@ interface HomeScreenProps {
 
 type MoodValue = 'calm' | 'relax' | 'focus' | 'anxious' | null
 
+// Windows 8-style tile configuration
+interface Tile {
+  id: string
+  title: string
+  subtitle?: string
+  icon?: React.ReactNode
+  image: string
+  size: 'small' | 'medium' | 'large' | 'wide' | 'tall' | 'extra-large'
+  color: string
+  onClick: () => void
+  gradient?: string
+  customHeight?: string // Optional custom height override
+}
+
 export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   const { t } = useLanguage()
   const { colors } = useTheme()
-  const [isStreakExpanded, setIsStreakExpanded] = useState(false)
   const [selectedMood, setSelectedMood] = useState<MoodValue>(null)
   const [videoSuggestions, setVideoSuggestions] = useState<VideoSuggestion[]>([])
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
@@ -51,6 +64,128 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
     anxious: "You're feeling anxious 😰"
   }
 
+  // Windows 8-style tiles with beautiful cover images - Gallery layout with varied sizes
+  // Organized to minimize gaps and create a compact layout
+  const tiles: Tile[] = [
+    {
+      id: 'thought-analysis',
+      title: 'Thought Analysis',
+      subtitle: 'AI-Powered CBT',
+      icon: <IoSparkles className="w-6 h-6" />,
+      image: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'large',
+      color: 'from-purple-500 to-pink-500',
+      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+      onClick: () => onNavigate('thoughtAnalysis')
+    },
+    {
+      id: 'meditation',
+      title: 'Meditation',
+      subtitle: `${user.meditations} sessions`,
+      icon: <IoFitness className="w-6 h-6" />,
+      image: 'https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'tall',
+      color: 'from-blue-500 to-cyan-500',
+      gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+      onClick: () => onNavigate('meditation')
+    },
+    {
+      id: 'journal',
+      title: 'Journal',
+      subtitle: 'Reflect & Grow',
+      icon: <IoJournal className="w-6 h-6" />,
+      image: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'small',
+      color: 'from-orange-500 to-red-500',
+      gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)',
+      onClick: () => onNavigate('journal')
+    },
+    {
+      id: 'ai-coach',
+      title: 'AI Coach',
+      subtitle: 'Ask Anything',
+      icon: <IoHeadset className="w-6 h-6" />,
+      image: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'tall', // Changed from medium to tall for better alignment
+      color: 'from-green-500 to-emerald-500',
+      gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      onClick: () => onNavigate('askQuestion')
+    },
+    {
+      id: 'vedic-calm',
+      title: 'Vedic Calm',
+      subtitle: 'Philosophy & Wisdom',
+      image: 'https://images.pexels.com/photos/15327651/pexels-photo-15327651.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'wide',
+      color: 'from-amber-500 to-yellow-500',
+      gradient: 'linear-gradient(135deg, #f59e0b 0%, #eab308 100%)',
+      onClick: () => onNavigate('vedicCalm')
+    },
+    {
+      id: 'profile',
+      title: 'Profile',
+      subtitle: 'Level ' + user.level,
+      icon: <IoAnalytics className="w-6 h-6" />,
+      image: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'small',
+      color: 'from-indigo-500 to-purple-500',
+      gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+      onClick: () => onNavigate('profile')
+    },
+    {
+      id: 'eeg-brain',
+      title: 'EEG Brain Health',
+      subtitle: 'Track & Improve',
+      image: 'https://images.pexels.com/photos/3184436/pexels-photo-3184436.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'small',
+      color: 'from-teal-500 to-cyan-500',
+      gradient: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+      onClick: () => onNavigate('eegBrainHealth')
+    },
+    {
+      id: 'midnight-relax',
+      title: 'Midnight Relaxation',
+      subtitle: 'Sleep & Calm',
+      image: 'https://images.pexels.com/photos/18554368/pexels-photo-18554368.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'medium',
+      color: 'from-violet-500 to-purple-500',
+      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
+      onClick: () => onNavigate('midnightRelaxation')
+    },
+    {
+      id: 'wisdom-gita',
+      title: 'Wisdom Gita',
+      subtitle: 'Ancient Insights',
+      image: 'https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'medium',
+      color: 'from-rose-500 to-pink-500',
+      gradient: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
+      onClick: () => onNavigate('wisdomGita')
+    }
+  ]
+
+  // Add YouTube video tile if videos are available - will appear at the end (bottom of grid)
+  const videoTile: Tile | null = !isLoadingVideos && videoSuggestions.length > 0 ? {
+    id: 'youtube-videos',
+    title: videoSourceContext === 'context' 
+      ? '✨ Personalized Videos'
+      : videoSourceContext === 'mood' && selectedMood
+      ? `${selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)} Music`
+      : 'Meditation Music',
+    subtitle: videoSuggestions[currentVideoIndex]?.title?.substring(0, 35) + '...' || 'Watch Now',
+    image: videoSuggestions[currentVideoIndex]?.thumbnails?.high?.url || videoSuggestions[currentVideoIndex]?.thumbnails?.medium?.url || 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+    size: 'wide',
+    color: 'from-red-500 to-pink-500',
+    gradient: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)',
+    onClick: () => {
+      if (videoSuggestions[currentVideoIndex]?.url) {
+        window.open(videoSuggestions[currentVideoIndex].url, '_blank')
+      }
+    }
+  } : null
+
+  // Note: YouTube video tile is rendered separately after regular tiles to appear at bottom
+
   // Fetch videos when mood changes or on initial load
   useEffect(() => {
     const fetchVideos = async () => {
@@ -59,27 +194,21 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
         let query: string
         let source: 'context' | 'mood' | 'default'
         
-        // Priority 1: Use context from chatbot conversations (if available)
         const contextQuery = getContextualSearchQuery()
         
         if (contextQuery) {
-          // User has shared problems in chatbot - use that context
           query = contextQuery
           source = 'context'
-          console.log('Using chatbot context for videos:', contextQuery)
         } else if (selectedMood) {
-          // Priority 2: Use selected mood
           query = moodToQuery[selectedMood]
           source = 'mood'
         } else {
-          // Priority 3: Default meditation videos and music
           query = 'meditation music mindfulness relaxation guided meditation calm music peaceful songs ambient sounds'
           source = 'default'
         }
         
         setVideoSourceContext(source)
-        
-        const videos = await recommendVideos(query, '', 6) // Fetch 6 videos
+        const videos = await recommendVideos(query, '', 6)
         setVideoSuggestions(videos)
         setCurrentVideoIndex(0)
       } catch (error) {
@@ -96,11 +225,9 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   // Auto-rotate videos every 5 seconds
   useEffect(() => {
     if (videoSuggestions.length === 0) return
-
     const interval = setInterval(() => {
       setCurrentVideoIndex((prev) => (prev + 1) % videoSuggestions.length)
-    }, 5000) // Rotate every 5 seconds
-
+    }, 5000)
     return () => clearInterval(interval)
   }, [videoSuggestions])
 
@@ -111,402 +238,356 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
     { emoji: anxiousImg, label: t('home.anxious'), value: 'anxious' },
   ]
 
-  const aiCoachSessions = [
-    {
-      id: 'midnight-relax',
-      titleKey: 'home.sessions.midnightRelaxation',
-      image: 'https://images.pexels.com/photos/18554368/pexels-photo-18554368.jpeg',
-      categoryKey: 'home.sessions.categorySleep',
-      onClick: () => onNavigate('midnightRelaxation')
-    },
-    {
-      id: 'vedic-calm',
-      titleKey: 'home.sessions.vedicCalm',
-      image: 'https://images.pexels.com/photos/15327651/pexels-photo-15327651.jpeg',
-      categoryKey: 'home.sessions.categoryPhilosophy',
-      onClick: () => onNavigate('vedicCalm')
-    },
-    {
-      id: 'midnight-launderette',
-      titleKey: 'home.sessions.midnightLaunderette',
-      image: 'https://images.pexels.com/photos/3125171/pexels-photo-3125171.jpeg',
-      categoryKey: 'home.sessions.categoryFocus',
-      onClick: () => onNavigate('midnightLaunderette')
-    },
-    {
-      id: 'wisdom-gita',
-      titleKey: 'home.sessions.wisdomGita',
-      image: 'https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg',
-      categoryKey: 'home.sessions.categoryInsights',
-      onClick: () => onNavigate('wisdomGita')
+  const getTileSizeClasses = (size: string) => {
+    switch (size) {
+      case 'small':
+        return 'col-span-1 row-span-1' // 1x1 - smallest
+      case 'medium':
+        return 'col-span-1 row-span-2' // 1x2 - tall
+      case 'large':
+        return 'col-span-2 row-span-2' // 2x2 - square large
+      case 'wide':
+        return 'col-span-2 row-span-1' // 2x1 - wide
+      case 'tall':
+        return 'col-span-1 row-span-3' // 1x3 - extra tall
+      case 'extra-large':
+        return 'col-span-2 row-span-3' // 2x3 - extra large
+      default:
+        return 'col-span-1 row-span-1'
     }
-  ]
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-20 transition-colors duration-300">
-        {/* Header with Greeting and Streak Flame */}
-        <div className="px-4 md:px-8 lg:px-12 pt-8 md:pt-12 lg:pt-16 pb-4 md:pb-6">
-          <div className="max-w-7xl mx-auto flex items-start justify-between">
-            <div className="text-gray-900 dark:text-dark-text">
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold mb-1 md:mb-2">{t('home.hi')} {user?.name || 'Guest'}</h1>
-              <p className="text-gray-700 dark:text-dark-text-secondary text-sm md:text-base">{t('home.howAreYouFeeling')}</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-blue-50/30 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-20 transition-colors duration-300">
+      {/* Header */}
+      <div className="px-4 pt-6 pb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-dark-text">
+              {t('home.hi')} {user?.name || 'Guest'}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{t('home.howAreYouFeeling')}</p>
+          </div>
+          <button
+            onClick={() => onNavigate('profile')}
+            className="p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors"
+          >
+            <svg className="w-6 h-6 text-gray-600 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Streak Flame Icon */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <button
-              onClick={() => onNavigate('profile')}
-              className="p-1.5 md:p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors"
-            >
-              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        {/* Day Streak - New Design Above Mood Selector */}
+        <button
+          onClick={() => onNavigate('streaks')}
+          className="w-full mb-3 relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
+          style={{
+            background: 'linear-gradient(135deg, #eab308 0%, #f97316 100%)',
+            minHeight: '80px'
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/20 to-orange-500/20" />
+          <div className="relative z-10 flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                <IoFlame className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg">{user.streak} {t('home.dayStreak')}</h3>
+                <p className="text-white/90 text-sm">{t('home.keepGoing')}</p>
+              </div>
+            </div>
+            <div className="text-white/80">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </button>
-            <button
-              onClick={() => setIsStreakExpanded(!isStreakExpanded)}
-              className="relative flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              style={{
-                background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
-              }}
-            >
-              <span className="text-xl md:text-2xl">🔥</span>
-              <div className="absolute -bottom-1 -right-1 bg-white rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center shadow-md">
-                <span className="text-xs font-bold text-orange-600">{user.streak}</span>
-              </div>
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </button>
 
-      {/* Expandable Streak Section - Small Banner */}
-      <div
-        className={`transition-all duration-300 ease-out overflow-hidden ${isStreakExpanded ? 'max-h-40' : 'max-h-0'
-          }`}
-      >
-        <div className="px-4 md:px-8 lg:px-12 pb-4 md:pb-6">
-          <div 
-            className="max-w-7xl mx-auto rounded-xl md:rounded-2xl p-3 md:p-4 shadow-lg theme-gradient"
-            style={{
-              background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
-            }}
-          >
-            <div className="flex items-center justify-between text-white">
-              <div className="flex items-center gap-2 md:gap-3">
-                <span className="text-2xl md:text-3xl">🔥</span>
-                <div>
-                  <h3 className="text-base md:text-lg font-semibold">{user.streak} {t('home.dayStreak')}</h3>
-                  <p className="text-white/90 text-xs md:text-sm">{t('home.miracleMoment')} 2 {t('home.days')}!</p>
-                </div>
-              </div>
+        {/* Mood Selector - Single Rectangle Container with Circular Frames */}
+        <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-dark-card p-3">
+          <div className="grid grid-cols-4 gap-3">
+            {moods.map((mood) => (
               <button
-                className="text-white/80 hover:text-white transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onNavigate('streaks')
+                key={mood.value}
+                onClick={() => {
+                  setSelectedMood(mood.value as MoodValue)
+                  saveUserContext('', '', mood.value as string)
                 }}
+                className="flex flex-col items-center gap-2 group cursor-pointer transition-all duration-300"
               >
-                <span className="text-xs md:text-sm">{t('home.viewDetails')} →</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 md:px-8 lg:px-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Integrated Mood Selector & Banner */}
-          <div className="mb-6 md:mb-8 bg-white/40 dark:bg-dark-card/40 backdrop-blur-md border border-white/30 dark:border-dark-border/30 rounded-xl md:rounded-2xl shadow overflow-hidden">
-            {/* Mood Selector */}
-            <div className="p-3 md:p-4">
-              <div className="flex justify-between items-center gap-2 md:gap-4">
-                {moods.map((mood) => (
-                  <button
-                    key={mood.value}
-                    onClick={() => setSelectedMood(mood.value as MoodValue)}
-                    className={`flex flex-col items-center space-y-1 md:space-y-2 flex-1 transition-all ${selectedMood === mood.value ? 'scale-110' : selectedMood ? 'opacity-50 scale-95' : ''
-                      }`}
-                  >
-                    <div 
-                      className={`w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden flex items-center justify-center ${selectedMood === mood.value ? 'ring-2 md:ring-4' : 'bg-gray-100 dark:bg-dark-card-hover'
-                      }`}
-                      style={selectedMood === mood.value ? {
-                        '--tw-ring-color': colors.primary,
-                        borderColor: colors.primary
-                      } as React.CSSProperties : undefined}
-                    >
-                      <img
-                        src={mood.emoji}
-                        alt={mood.label}
-                        className="w-9 h-9 md:w-12 md:h-12 object-contain"
-                      />
-                    </div>
-                    <span 
-                      className={`text-[10px] md:text-xs font-medium ${selectedMood === mood.value ? '' : 'text-gray-700 dark:text-dark-text-secondary'
-                      }`}
-                      style={selectedMood === mood.value ? { color: colors.primary } : undefined}
-                    >{mood.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Expandable Banner */}
-          <div 
-            className={`transition-all duration-300 ease-out overflow-hidden ${
-              selectedMood ? 'max-h-32' : 'max-h-0'
-            }`}
-          >
-            {selectedMood && (
-              <div
-                className="p-4 md:p-6 cursor-pointer transition-all theme-gradient-hover"
-                style={{
-                  background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
-                }}
-                onClick={() => onNavigate('askQuestion')}
-              >
-                <p className="text-white font-medium text-center mb-1 md:mb-2 text-sm md:text-base">
-                  {moodPrompts[selectedMood]}
-                </p>
-                <p className="text-white/90 text-xs md:text-sm text-center font-medium">
-                  {t('home.tapToShare')}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-          {/* AI Coach Sessions - Responsive Grid */}
-          <div className="mb-4 md:mb-6">
-            <div className="px-1 flex items-center justify-between mb-2 md:mb-3">
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-dark-text">{t('home.curatedSessions')}</h3>
-              <button
-                className="text-xs md:text-sm font-medium flex items-center theme-text"
-                onClick={() => onNavigate('explore')}
-              >
-                <span>{t('home.explore')}</span>
-                <span className="ml-1">→</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
-              {aiCoachSessions.map((session) => (
+                {/* Circular Frame */}
                 <div
-                  key={session.id}
-                  onClick={session.onClick}
-                  className="relative rounded-xl md:rounded-2xl overflow-hidden h-24 md:h-28 lg:h-32 flex items-end p-2 md:p-3 cursor-pointer shadow-lg group hover:shadow-xl transition-shadow"
+                  className={`relative rounded-full overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-dark-card aspect-square flex items-center justify-center w-full ${
+                    selectedMood === mood.value ? 'ring-2' : ''
+                  }`}
+                  style={selectedMood === mood.value ? {
+                    '--tw-ring-color': colors.primary,
+                    borderColor: colors.primary
+                  } as React.CSSProperties : undefined}
                 >
-                {/* Background Image */}
-                <div className="absolute inset-0 z-0">
+                  {/* Emoji - Centered, reduced size */}
                   <img
-                    src={session.image}
-                    alt={t(session.titleKey)}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                    src={mood.emoji}
+                    alt={mood.label}
+                    className="w-14 h-14 object-contain"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+
+                  {/* Selected Indicator - Circular ring */}
+                  {selectedMood === mood.value && (
+                    <div 
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: colors.primary }}
+                    />
+                  )}
                 </div>
 
-                {/* Content */}
-                <div className="relative z-10 w-full">
-                  <div className="flex justify-between items-end">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white text-xs md:text-sm font-semibold mb-0.5 md:mb-1 drop-shadow truncate">{t(session.titleKey)}</h4>
-                      <div className="inline-flex items-center text-[9px] md:text-[10px] text-white/90 bg-white/15 backdrop-blur px-1.5 md:px-2 py-0.5 rounded-full border border-white/20">
-                        {t(session.categoryKey)}
-                      </div>
-                    </div>
-                    {/* Play Button */}
-                    <div className="bg-white rounded-full w-7 h-7 md:w-8 md:h-8 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform ml-2 flex-shrink-0">
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="ml-0.5 md:w-3 md:h-3 theme-text"
-                        style={{ color: colors.primary }}
-                      >
-                        <path 
-                          d="M8 5v14l11-7z" 
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                {/* Text Label */}
+                <span className={`text-xs font-medium transition-colors ${
+                  selectedMood === mood.value
+                    ? 'text-gray-900 dark:text-dark-text'
+                    : 'text-gray-600 dark:text-dark-text-secondary'
+                }`}>
+                  {mood.label}
+                </span>
+              </button>
             ))}
           </div>
         </div>
 
-          {/* YouTube Video Recommendations - Rolling Thumbnails */}
-          <div className="mb-4 md:mb-6">
-            <div className="px-1 flex items-center justify-between mb-2 md:mb-3">
-              <h3 className="text-sm md:text-base lg:text-lg font-semibold text-gray-900">
-                {videoSourceContext === 'context' && `✨ ${t('home.personalizedForYou')}`}
-                {videoSourceContext === 'mood' && selectedMood &&
-                  `${selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)} Music & Videos`
+        {/* Expandable Mood Banner - Navigates to AI Coach */}
+        <div 
+          className={`transition-all duration-300 ease-out overflow-hidden mt-3 ${
+            selectedMood ? 'max-h-20' : 'max-h-0'
+          }`}
+        >
+          {selectedMood && (
+            <div
+              className="p-4 cursor-pointer transition-all rounded-xl shadow-lg"
+              style={{
+                background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+              }}
+              onClick={() => {
+                // Save mood to context for AI Coach to remember
+                if (selectedMood) {
+                  saveUserContext('', '', selectedMood)
                 }
-                {videoSourceContext === 'default' && t('home.meditationMusic')}
-              </h3>
-              {videoSuggestions.length > 0 && (
-                <div className="flex items-center gap-1 md:gap-2">
-                  <div className="flex gap-0.5 md:gap-1">
-                    {videoSuggestions.slice(0, 3).map((_, index) => (
-                      <div
-                        key={index}
-                        className={`h-1 md:h-1.5 rounded-full transition-all duration-300 ${index === currentVideoIndex % 3
-                            ? 'w-4 md:w-6'
-                            : 'w-1 md:w-1.5 opacity-40'
-                          }`}
-                        style={{
-                          backgroundColor: index === currentVideoIndex % 3 ? colors.primary : `${colors.primary}40`
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-[10px] md:text-xs text-gray-500">
-                    {currentVideoIndex + 1}/{videoSuggestions.length}
-                  </span>
-                </div>
-              )}
+                // Navigate to AI Coach
+                onNavigate('askQuestion')
+              }}
+            >
+              <p className="text-white font-medium text-center mb-1 text-sm">
+                {moodPrompts[selectedMood]}
+              </p>
+              <p className="text-white/90 text-xs text-center font-medium">
+                {t('home.tapToShare')} →
+              </p>
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Loading State */}
-            {isLoadingVideos && (
-              <div 
-                className="relative rounded-2xl md:rounded-3xl overflow-hidden h-40 md:h-52 lg:h-64 flex items-center justify-center"
-                style={{
-                  background: `linear-gradient(135deg, ${colors.gradientFrom}15 0%, ${colors.gradientTo}15 100%)`
-                }}
-              >
-                <div className="flex flex-col items-center gap-2 md:gap-3 px-4">
-                  <div 
-                    className="w-10 h-10 md:w-12 md:h-12 border-3 md:border-4 rounded-full animate-spin"
-                    style={{
-                      borderColor: `${colors.primary}30`,
-                      borderTopColor: colors.primary
-                    }}
-                  />
-                  <p 
-                    className="font-medium text-xs md:text-sm lg:text-base text-center theme-text"
-                    style={{ color: colors.primary }}
-                  >
-                    {videoSourceContext === 'context'
-                      ? t('home.findingVideosContext')
-                      : t('home.findingVideos')
-                    }
-                  </p>
-                </div>
+      {/* Windows 8-Style Tile Grid */}
+      <div className="px-4">
+        <div className="grid grid-cols-2 gap-3 auto-rows-[100px]" style={{ gridAutoFlow: 'dense' }}>
+          {/* Regular Tiles */}
+          {tiles.map((tile) => (
+            <button
+              key={tile.id}
+              onClick={tile.onClick}
+              className={`${getTileSizeClasses(tile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]`}
+            >
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                <img
+                  src={tile.image}
+                  alt={tile.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
+                />
+                {/* Gradient Overlay - Reduced to show 25% more image visibility */}
+                <div 
+                  className={`absolute inset-0 bg-gradient-to-br ${tile.color} opacity-30 group-hover:opacity-40 transition-opacity`}
+                  style={tile.gradient ? {
+                    background: tile.gradient,
+                    opacity: 0.30
+                  } : undefined}
+                />
+                {/* Dark Overlay for Text Readability - Increased darkness for better text visibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
               </div>
-            )}
 
-            {/* Video Display */}
-            {!isLoadingVideos && videoSuggestions.length > 0 && (
-              <div className="relative">
-                {/* Main Video Thumbnail */}
-                <div
-                  onClick={() => window.open(videoSuggestions[currentVideoIndex].url, '_blank')}
-                  className="relative rounded-2xl md:rounded-3xl overflow-hidden h-40 md:h-52 lg:h-64 cursor-pointer group shadow-xl hover:shadow-2xl transition-all duration-300"
-                >
-                  {/* Thumbnail Image */}
-                  <img
-                    src={videoSuggestions[currentVideoIndex].thumbnails?.high?.url || videoSuggestions[currentVideoIndex].thumbnails?.medium?.url}
-                    alt={videoSuggestions[currentVideoIndex].title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  {/* Play Button */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white/95 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white transition-all duration-300">
-                      <IoPlay 
-                        className="text-2xl md:text-3xl ml-0.5 md:ml-1 theme-text"
-                        style={{ color: colors.primary }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Video Info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-                    <h4 className="text-white font-semibold text-sm md:text-base mb-0.5 md:mb-1 line-clamp-2 drop-shadow-lg">
-                      {videoSuggestions[currentVideoIndex].title}
-                    </h4>
-                    <p className="text-white/90 text-[10px] md:text-xs line-clamp-1 drop-shadow">
-                      {videoSuggestions[currentVideoIndex].channelTitle}
-                    </p>
-                  </div>
-
-                  {/* YouTube Logo Badge */}
-                  <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-red-600 text-white px-2 py-1 md:px-3 md:py-1.5 rounded-md md:rounded-lg text-[10px] md:text-xs font-bold shadow-lg">
-                    {t('home.youtube')}
-                  </div>
-
-                  {/* Personalized Badge */}
-                  {videoSourceContext === 'context' && (
-                    <div 
-                      className="absolute top-2 md:top-4 left-2 md:left-4 text-white px-2 py-1 md:px-3 md:py-1.5 rounded-md md:rounded-lg text-[10px] md:text-xs font-bold shadow-lg flex items-center gap-0.5 md:gap-1 theme-gradient"
-                      style={{
-                        background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
-                      }}
-                    >
-                      <span>✨</span>
-                      <span>{t('home.forYou')}</span>
+              {/* Content */}
+              <div className="relative z-10 h-full flex flex-col justify-between p-3 text-white">
+                <div>
+                  {tile.icon && (
+                    <div className="mb-2 opacity-90 group-hover:opacity-100 transition-opacity">
+                      {tile.icon}
                     </div>
                   )}
+                  <h3 className="font-bold text-sm md:text-base leading-tight mb-1 drop-shadow-lg">
+                    {tile.title}
+                  </h3>
+                  {tile.subtitle && (
+                    <p className="text-xs opacity-90 drop-shadow">
+                      {tile.subtitle}
+                    </p>
+                  )}
                 </div>
-
-                {/* Thumbnail Preview Strip */}
-                <div className="mt-2 md:mt-3 flex gap-1.5 md:gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                  {videoSuggestions.map((video, index) => (
-                    <button
-                      key={video.videoId}
-                      onClick={() => setCurrentVideoIndex(index)}
-                      className={`relative flex-shrink-0 w-24 h-16 md:w-32 md:h-20 rounded-lg md:rounded-xl overflow-hidden transition-all duration-300 ${index === currentVideoIndex
-                          ? 'ring-2 md:ring-3 scale-105 shadow-lg'
-                          : 'opacity-60 hover:opacity-100 hover:scale-105'
-                        }`}
-                      style={index === currentVideoIndex ? {
-                        '--tw-ring-color': colors.primary
-                      } as React.CSSProperties : undefined}
-                    >
-                      <img
-                        src={video.thumbnails?.medium?.url || video.thumbnails?.default?.url}
-                        alt={video.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      {index === currentVideoIndex && (
-                        <div 
-                          className="absolute inset-0 border-2 rounded-lg md:rounded-xl"
-                          style={{ borderColor: colors.primary }}
-                        />
-                      )}
-                    </button>
-                  ))}
+                
+                {/* Play/Arrow Indicator */}
+                <div className="self-end opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* No Videos State */}
-            {!isLoadingVideos && videoSuggestions.length === 0 && (
-              <div className="relative rounded-2xl md:rounded-3xl overflow-hidden h-40 md:h-52 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-center px-4 md:px-6">
-                  <p className="text-gray-600 font-medium mb-1 md:mb-2 text-sm md:text-base">{t('home.noVideosFound')}</p>
-                  <p className="text-gray-500 text-xs md:text-sm">
-                    {t('home.checkYouTubeConfig')}
-                  </p>
+              {/* Shine Effect on Hover */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+              </div>
+            </button>
+          ))}
+          
+          {/* YouTube Video Tile - Appears at bottom after all other tiles */}
+          {videoTile && (
+            <button
+              key={videoTile.id}
+              onClick={videoTile.onClick}
+              className={`${getTileSizeClasses(videoTile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]`}
+            >
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                <img
+                  src={videoTile.image}
+                  alt={videoTile.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
+                />
+                {/* Gradient Overlay */}
+                <div 
+                  className={`absolute inset-0 bg-gradient-to-br ${videoTile.color} opacity-30 group-hover:opacity-40 transition-opacity`}
+                  style={videoTile.gradient ? {
+                    background: videoTile.gradient,
+                    opacity: 0.30
+                  } : undefined}
+                />
+                {/* Dark Overlay for Text Readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
+              </div>
+
+              {/* Content */}
+              <div className="relative z-10 h-full flex flex-col justify-between p-3 text-white">
+                <div>
+                  <h3 className="font-bold text-sm md:text-base leading-tight mb-1 drop-shadow-lg">
+                    {videoTile.title}
+                  </h3>
+                  {videoTile.subtitle && (
+                    <p className="text-xs opacity-90 drop-shadow line-clamp-2">
+                      {videoTile.subtitle}
+                    </p>
+                  )}
+                </div>
+                
+                {/* YouTube Play Button */}
+                <div className="self-end opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-8 h-8 bg-red-600/80 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* YouTube Badge */}
+              <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-lg">
+                YouTube
+              </div>
+
+              {/* Shine Effect on Hover */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+              </div>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Video Thumbnail Strip - Show all video thumbnails below tiles */}
+      {!isLoadingVideos && videoSuggestions.length > 0 && (
+        <div className="px-4 mt-6 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-dark-text">
+              {videoSourceContext === 'context' && `✨ ${t('home.personalizedForYou')}`}
+              {videoSourceContext === 'mood' && selectedMood &&
+                `${selectedMood.charAt(0).toUpperCase() + selectedMood.slice(1)} Music & Videos`
+              }
+              {videoSourceContext === 'default' && t('home.meditationMusic')}
+            </h3>
+            <div className="flex items-center gap-1">
+              {videoSuggestions.slice(0, 3).map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    index === currentVideoIndex % 3
+                      ? 'w-6'
+                      : 'w-1.5 opacity-40'
+                  }`}
+                  style={{
+                    backgroundColor: index === currentVideoIndex % 3 ? colors.primary : `${colors.primary}40`
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
+          {/* Thumbnail Preview Strip */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {videoSuggestions.map((video, index) => (
+              <button
+                key={video.videoId}
+                onClick={() => {
+                  setCurrentVideoIndex(index)
+                  window.open(video.url, '_blank')
+                }}
+                className={`relative flex-shrink-0 w-32 h-20 rounded-xl overflow-hidden transition-all duration-300 ${
+                  index === currentVideoIndex
+                    ? 'ring-2 scale-105 shadow-lg'
+                    : 'opacity-70 hover:opacity-100 hover:scale-105'
+                }`}
+                style={index === currentVideoIndex ? {
+                  '--tw-ring-color': colors.primary,
+                  borderColor: colors.primary
+                } as React.CSSProperties : undefined}
+              >
+                <img
+                  src={video.thumbnails?.medium?.url || video.thumbnails?.default?.url}
+                  alt={video.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-1 left-1 right-1">
+                  <p className="text-white text-[10px] font-medium line-clamp-2 drop-shadow">
+                    {video.title}
+                  </p>
+                </div>
+                {index === currentVideoIndex && (
+                  <div 
+                    className="absolute inset-0 border-2 rounded-xl"
+                    style={{ borderColor: colors.primary }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-
-        
-      </div>
+      )}
     </div>
   )
 }

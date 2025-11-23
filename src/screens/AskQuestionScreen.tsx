@@ -1,14 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Screen } from '../App'
 import { callGeminiAPI } from '../utils/geminiAPI'
 import { recommendVideos } from '../utils/youtubeAI'
 import type { VideoSuggestion } from '../utils/youtubeAI'
-import { saveUserContext } from '../utils/userContext'
+import { saveUserContext, getUserContext } from '../utils/userContext'
 import { BsEmojiSmile } from 'react-icons/bs'
 import { CiCamera, CiImageOn } from 'react-icons/ci'
 import { FaMicrophone } from 'react-icons/fa6'
 import { IoSendSharp, IoChevronBack, IoVolumeHigh, IoLanguage, IoPlay } from 'react-icons/io5'
-import { useEffect, useRef } from 'react'
 
 interface AskQuestionScreenProps {
   onNavigate: (screen: Screen) => void
@@ -24,7 +23,26 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('en')
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [userMood, setUserMood] = useState<string | null>(null)
   const recognitionRef = useRef<any>(null)
+
+  // Load mood from context when screen loads
+  useEffect(() => {
+    const context = getUserContext()
+    if (context.mood) {
+      setUserMood(context.mood)
+      // Pre-fill question with mood context
+      const moodPrompts: Record<string, string> = {
+        calm: "I'm feeling calm today. How can I maintain this peaceful state?",
+        relax: "I'm feeling relaxed. What practices can help me stay this way?",
+        focus: "I'm feeling focused. How can I enhance my concentration?",
+        anxious: "I'm feeling anxious. What can help me feel more calm and centered?"
+      }
+      if (moodPrompts[context.mood]) {
+        setQuestion(moodPrompts[context.mood])
+      }
+    }
+  }, [])
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -89,7 +107,13 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
       const languagePrompt = selectedLanguage !== 'en' 
         ? `Please respond in ${languages.find(l => l.code === selectedLanguage)?.name || 'English'}. ` 
         : ''
-      const res = await callGeminiAPI(languagePrompt + q)
+      
+      // Add mood context to the prompt if available
+      const moodContext = userMood 
+        ? `The user is currently feeling ${userMood}. Please keep this in mind when responding. ` 
+        : ''
+      
+      const res = await callGeminiAPI(languagePrompt + moodContext + q)
       if (res.success && res.text) {
         setAiResponse(res.text)
         setQuestion('')
