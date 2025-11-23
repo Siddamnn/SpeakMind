@@ -1,425 +1,423 @@
-# SpeakMind - Mob### 💬 **Ask Questions**
-- **AI-Powered Wellness Coach**: Get personalized advice from Gemini AI
-- **Beautiful, Responsive UI**: Glassmorphism design with gradient backgrounds
-- **FAQ Section**: Expandable frequently asked questions
-- **Smart Responses**: Context-aware mental wellness guidance
-- **Loading States**: Smooth loading animations during AI processing
-- **Error Handling**: Graceful fallbacks for API connectivity issuesMeditation & Mindfulness App
+# 🧘 SpeakMind - AI-Powered Mental Wellness Platform
 
-A comprehensive mobile-first meditation and mindfulness application built with React, TypeScript, Vite, and Tailwind CSS. SpeakMind connects users with AI-powered meditation coaching, community features, and personalized mindfulness journeys.
+<div align="center">
 
-## 🌟 Features
+![SpeakMind](https://img.shields.io/badge/SpeakMind-Mental%20Wellness-9D7CF3?style=for-the-badge)
+![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript)
+![Firebase](https://img.shields.io/badge/Firebase-11.0-FFCA28?style=for-the-badge&logo=firebase)
+![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite)
 
-### 🪷 **Onboarding & Authentication**
-- Beautiful gradient splash screen with lotus branding
-- Quick sign-in with Gmail or email/phone options
-- "Meditate With Us!" tagline and welcoming design
+*A comprehensive mental wellness application combining AI coaching, meditation, journaling, and community support*
 
-### 🏠 **Home Dashboard**
-- Personalized greeting with mood selector
-- Quick access to ask questions feature
-- AI Coach recommended sessions with thumbnails
-- Streak tracking and motivation
+[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Performance](#-performance-optimizations) • [Contributing](#-contributing)
 
-### � **Ask Questions**
-- Expandable FAQ section with common meditation questions
-- Free-form question input with text or voice
-- Direct connection to AI conversation interface
+</div>
 
-### 🔥 **Streaks & Calendar**
-- Visual calendar showing meditation history
-- Current streak display and stats
-- "Miracle Moment" daily motivation
-- Progress tracking and insights
+---
 
-### 🧘‍♀️ **Meditation Timer**
-- Customizable duration (5-60 minutes)
-- Beautiful circular progress indicator
-- Breathing guidance animations
-- Session completion celebration
+## 📖 Overview
 
-### 🤖 **AI Coach**
-- Guided meditation sessions with media player
-- Play/pause controls and progress tracking
-- Session descriptions and categories
-- Immersive audio experience UI
+SpeakMind is a modern mental wellness platform that leverages AI technology to provide personalized mental health support. The application offers guided meditation, AI-powered coaching, mood tracking, journaling, and community features—all designed to help users maintain their mental well-being.
 
-### 👤 **Profile & Analytics**
-- User stats: streak, time meditated, sessions, points
-- Weekly meditation insights with bar chart
-- Achievement system with unlock progress
-- Level progression tracking
+### 🌟 Key Highlights
 
-### 👥 **Community Sharing**
-- Friends list with online status
-- Activity sharing and updates
-- Direct messaging integration
-- Social motivation features
+- 🤖 **AI-Powered Coaching** - Real-time conversations with Google's Gemini AI
+- 🧘 **Guided Meditation** - Customizable meditation sessions with timers
+- 📝 **Smart Journaling** - Emotion tracking and reflection prompts
+- 🌍 **Multi-language Support** - 11 Indian languages + English
+- 🎨 **6 Beautiful Themes** - Customizable color schemes and dark mode
+- 🔥 **Streak Tracking** - Gamified wellness habits
+- 👥 **Community Forum** - Share experiences and support others
+- 📊 **EEG Integration** - Brain health monitoring (experimental)
 
-### 🎯 **Mind Coach Video Calls**
-- Video call interface with coach
-- Live consultation features
-- Call controls (mic, video, end call)
-- Professional coaching experience
+---
 
-### 💬 **AI Conversation**
-- Chat interface with meditation AI
-- Real-time responses and guidance
-- Voice input support
-- Contextual help and advice
+## ✨ Features
 
-## 🎨 Design System
+### 🧠 AI Features
 
-### **Color Palette**
-- **Primary Purple**: `#9D7CF3` - Main brand color
-- **Primary Pink**: `#FFB8C4` - Accent and gradients
-- **Primary Yellow**: `#FDC75E` - Highlights and achievements
-- **Primary Orange**: `#FF9A76` - Energy and motivation
+#### Mind Coach
+- Real-time AI conversations using Google Gemini
+- Context-aware responses based on your emotional state
+- Voice session support for hands-free interaction
+- Personalized wellness recommendations
 
-### **Mobile-First Approach**
-- Maximum width container (max-w-md)
-- Touch-optimized interactions
-- Gesture-friendly button sizes
-- Smooth animations and transitions
+#### AI Question Assistant
+- Instant answers to mental health questions
+- Evidence-based wellness guidance
+- Topic suggestions and prompts
 
-## 🛠 Tech Stack
+### 🧘 Meditation & Mindfulness
 
-- **Frontend**: React 18 with TypeScript
-- **Build Tool**: Vite 7.x
-- **Styling**: Tailwind CSS 3.4
-- **Icons**: Emoji-based design system
-- **State Management**: React useState (local state)
-- **Responsive**: Mobile-first design approach
+- **Guided Meditation Sessions** - Various durations and styles
+- **Meditation Timer** - Customizable with ambient sounds
+- **Emotional Release Exercises** - Targeted breathing and relaxation
+- **Quick Calm Exercises** - 5-minute stress relief
+- **Stretch & Focus** - Physical + mental wellness
+- **Mind-Body Sync** - Holistic wellness routines
+
+### 📝 Journaling & Tracking
+
+- **Reflection Journal** - Daily mood and thought tracking
+- **Emotion Analysis** - AI-powered sentiment detection
+- **Streak System** - Build consistent wellness habits
+- **Progress Visualization** - Track your wellness journey
+
+### 🌏 Content & Learning
+
+- **Vedic Calm** - Ancient wisdom for modern minds
+- **Wisdom from Gita** - Bhagavad Gita insights
+- **Midnight Relaxation** - Late-night calming content
+- **Wellness Events** - Discover local and online events
+
+### 👥 Community
+
+- **Sharing Forum** - Connect with others on similar journeys
+- **Anonymous Posting** - Share safely and comfortably
+- **Real-time Updates** - Firestore-powered live discussions
+- **Multi-language** - Communicate in your preferred language
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend Framework
+- **React 18.3** - Modern UI library with hooks
+- **TypeScript 5.6** - Type-safe development
+- **Vite 5.4** - Lightning-fast build tool
+
+### Styling
+- **Tailwind CSS** - Utility-first CSS framework
+- **Framer Motion** - Smooth animations
+- **Custom Themes** - 6 color schemes with dark mode
+
+### Backend & Services
+- **Firebase 11.0**
+  - Authentication (Email, Google OAuth)
+  - Firestore (Real-time database)
+  - Offline persistence enabled
+- **Google Gemini AI** - AI coaching and conversations
+- **Serverless Functions** - API key security
+
+### State Management
+- **React Context API** - Global state (Auth, Language, Theme)
+- **Custom Hooks** - Reusable logic
+- **Optimized with useMemo/useCallback** - Performance-first
+
+### Development Tools
+- **ESLint** - Code quality
+- **TypeScript Strict Mode** - Enhanced type safety
+- **Git** - Version control
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 20.19+ or 22.12+ (recommended)
-- npm or yarn
 
-### Installation & Setup
+- Node.js 18+ and npm
+- Firebase account
+- Google AI API key (for Gemini)
 
-1. **Install dependencies:**
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ankurrawatll/SpeakMind.git
+   cd SpeakMind
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. **Firebase Setup:**
-   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Enable Authentication with Email/Password and Google providers
-   - Copy `.env.example` to `.env` and fill in your Firebase config values
-   - Get your config from Project Settings > General > Your apps
+3. **Configure environment variables**
+   
+   Create a `.env` file in the root directory:
+   ```env
+   # Firebase Configuration
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   
+   # Google AI (Gemini)
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   
+   # Optional: Pexels API for images
+   VITE_PEXELS_API_KEY=your_pexels_key
+   ```
 
-3. **Start development server:**
+4. **Run development server**
    ```bash
    npm run dev
    ```
+   
+   The app will open at `http://localhost:3000`
 
-4. **Open in browser:**
-   - Navigate to `http://localhost:5174`
-   - Best viewed in mobile viewport (375px width)
-
-5. **Build for production:**
+5. **Build for production**
    ```bash
    npm run build
    ```
 
-## 🔐 Firebase Authentication Setup
+### Firebase Setup
 
-### **Required Firebase Services:**
-- **Authentication**: Email/Password and Google Sign-In
-- **Firestore Database**: User data and meditation progress (optional)
-
-### **Environment Variables:**
-Create a `.env` file in the root directory (copy from `.env.example`):
-```env
-# Firebase Configuration
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=your-app-id
-VITE_FIREBASE_MEASUREMENT_ID=your-measurement-id
-
-# YouTube API Key (for video recommendations)
-VITE_YOUTUBE_API_KEY=your-youtube-api-key
-
-# Gemini AI API Configuration
-VITE_GEMINI_API_KEY=your-gemini-api-key
-```
-
-### **Getting API Keys:**
-
-#### **Firebase Setup:**
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select existing
-3. Go to Project Settings > General > Your apps
-4. Copy the config values to your `.env` file
-
-#### **YouTube API Setup:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable YouTube Data API v3
-4. Go to Credentials > Create Credentials > API Key
-5. Add the key to your `.env` file as `VITE_YOUTUBE_API_KEY`
-6. The app will use this for AI-powered video recommendations
-
-#### **Gemini AI Setup:**
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a new API key for Gemini Pro
-3. Add the key to your `.env` file as `VITE_GEMINI_API_KEY`
-4. The AI coach feature will provide personalized meditation guidance
-
-### **Firebase Console Setup:**
-1. Go to Authentication > Sign-in method
-2. Enable Email/Password provider
-3. Enable Google provider (add your domain)
-4. Add authorized domains for production (see Vercel Deployment section below)
-
-## 🚀 Deploying to Vercel
-
-### **Prerequisites:**
-1. Install Vercel CLI globally:
-   ```bash
-   npm install -g vercel
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Enable **Authentication** (Email/Password, Google)
+3. Create a **Firestore Database** (Start in production mode)
+4. Add security rules for Firestore:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{userId} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+       match /forum_posts/{postId} {
+         allow read: if request.auth != null;
+         allow create: if request.auth != null;
+         allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+       }
+     }
+   }
    ```
-
-### **Step 1: Initial Setup**
-1. Login to Vercel:
-   ```bash
-   vercel login
-   ```
-2. Follow the prompts to authenticate
-
-### **Step 2: Deploy**
-1. From the project root, run:
-   ```bash
-   vercel --prod --archive=tgz
-   ```
-2. Follow the prompts:
-   - **Set up and deploy?** Yes
-   - **Which scope?** Select your account
-   - **Link to existing project?** No (first time) or Yes (subsequent deploys)
-   - **Project name?** speak-mind (or your preferred name)
-   - **Directory?** ./ (default)
-
-### **Step 3: Add Environment Variables in Vercel**
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click on your project (e.g., "speak-mind")
-3. Go to **Settings** → **Environment Variables**
-4. Add each variable from your `.env.local`:
-   - `VITE_FIREBASE_API_KEY`
-   - `VITE_FIREBASE_AUTH_DOMAIN`
-   - `VITE_FIREBASE_PROJECT_ID`
-   - `VITE_FIREBASE_STORAGE_BUCKET`
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
-   - `VITE_FIREBASE_APP_ID`
-   - `VITE_FIREBASE_MEASUREMENT_ID`
-   - `VITE_GEMINI_API_KEY`
-
-   For each variable:
-   - **Key**: Variable name (e.g., `VITE_FIREBASE_API_KEY`)
-   - **Value**: The actual value from your `.env.local`
-   - **Environment**: Check all three boxes (Production, Preview, Development)
-   - Click **Save**
-
-5. After adding all variables, **redeploy** for changes to take effect
-
-### **Step 4: Configure Firebase for Vercel Domain**
-⚠️ **IMPORTANT:** You must authorize your Vercel domain in Firebase or you'll get authentication errors!
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project
-3. Click **Authentication** in the left sidebar
-4. Click the **Settings** tab (⚙️ gear icon)
-5. Scroll to **Authorized domains**
-6. Click **Add domain**
-7. Add your Vercel deployment URL (e.g., `speak-mind-xxxxx.vercel.app`)
-8. Also add the wildcard for all preview deployments: `*.vercel.app`
-9. Click **Add**
-
-### **Step 5: Verify Deployment**
-1. Visit your deployment URL (shown after `vercel` command completes)
-2. Test the authentication flow
-3. Navigate to **Sharing → Events** to test real event scraping
-
-### **Common Issues:**
-
-**"Firebase: Error (auth/unauthorized-domain)"**
-- Solution: Add your Vercel domain to Firebase authorized domains (see Step 4)
-
-**Blank page on Vercel:**
-- Ensure environment variables are added in Vercel dashboard
-- Check browser console for errors
-- Redeploy after adding environment variables
-
-**Events not showing:**
-- Events scraping only works in production (Vercel), not localhost
-- Check Vercel logs: `vercel logs --follow`
-
-## 📱 App Flow & Navigation
-
-### **Screen Flow:**
-1. **Onboarding** → Authentication options
-2. **Home** → Main dashboard with mood & quick actions
-3. **Ask Question** → FAQ + AI question interface
-4. **Streaks** → Calendar view and progress
-5. **Timer** → Meditation session interface
-6. **AI Coach** → Media player for guided sessions
-7. **Profile** → User stats and achievements
-8. **Sharing** → Community and friends
-9. **Mind Coach** → Video call interface
-10. **Conversation** → AI chat for guidance
-
-### **Bottom Navigation:**
-- 🏠 Home
-- 🧘‍♀️ Meditation
-- 🎯 Mind Coach
-- 👥 Sharing
-- 👤 Profile
-
-## 📂 Project Structure
-
-```
-src/
-├── components/
-│   └── BottomNavigation.tsx    # Main navigation component
-├── screens/
-│   ├── OnboardingScreen.tsx    # Login/splash screen
-│   ├── HomeScreen.tsx          # Main dashboard
-│   ├── AskQuestionScreen.tsx   # FAQ + question input
-│   ├── StreaksScreen.tsx       # Calendar & progress
-│   ├── MeditationTimerScreen.tsx # Timer interface
-│   ├── AICoachScreen.tsx       # Media player
-│   ├── ProfileScreen.tsx       # User profile & stats
-│   ├── SharingScreen.tsx       # Community features
-│   ├── MindCoachScreen.tsx     # Video call UI
-│   └── ConversationScreen.tsx  # AI chat interface
-├── hooks/                      # Custom React hooks
-├── utils/
-│   ├── geminiAPI.ts           # Gemini AI integration
-│   ├── youtubeAI.ts           # YouTube video recommendations
-│   ├── geolocation.ts         # Location & distance utilities
-│   └── eventsAPI.ts           # Events scraping API client
-├── App.tsx                     # Main app component
-├── main.tsx                    # Entry point
-└── index.css                   # Global styles + Tailwind
-
-api/
-└── events.ts                   # Vercel serverless function for event scraping
-```
-
-## 🎯 Key Features Implementation
-
-### **Mobile Optimizations:**
-- Touch target sizes (44px minimum)
-- Swipe gestures and transitions
-- Haptic feedback ready
-- iOS/Android safe areas
-- Prevent zoom on input focus
-
-### **Responsive Components:**
-- `mobile-container` - Main app wrapper
-- `card` - Consistent content containers
-- `btn-primary/secondary` - Touch-optimized buttons
-- `gradient-bg` - Brand gradient backgrounds
-
-### **State Management:**
-- Authentication state persistence
-- User progress tracking
-- Screen navigation state
-- Timer and session state
-
-### **Real Events Feature (NEW!):**
-The Events tab now shows **real wellness events** near the user:
-
-#### **Features:**
-- 📍 **Automatic Geolocation**: Detects user's location (or uses Mumbai for testing)
-- 🌐 **Real Event Scraping**: Scrapes wellness events from AllEvents.in and District.in
-- 📏 **Distance Calculation**: Shows distance from user to event venues
-- ⏰ **Hourly Caching**: Caches events for 1 hour to reduce API calls
-- 🎯 **Smart Filtering**: Only shows meditation, yoga, mental health, and wellness events
-
-#### **Implementation:**
-- **Frontend**: Geolocation API + React hooks
-- **Backend**: Vercel serverless function (`/api/events.ts`)
-- **Scraping**: Cheerio + Axios for HTML parsing
-- **Sources**: AllEvents.in, District.in
-
-#### **How It Works:**
-1. User opens Events tab → Location permission requested
-2. Location detected (or test location for Mumbai used)
-3. API calls scraper with city name + coordinates
-4. Events scraped from wellness categories
-5. Distances calculated and events sorted by proximity
-6. Results cached for 1 hour
-
-#### **Testing:**
-- **Development**: Shows test location (Mumbai) with info banner
-- **Production**: Full event scraping with real data
-- **Test Mode**: Set `USE_TEST_LOCATION = true` in SharingScreen.tsx (line 320)
-
-## 🔮 Future Enhancements
-
-### **Backend Integration:**
-- User authentication & profiles
-- Meditation session storage
-- Social features & friend connections
-- AI conversation history
-- Progress analytics
-
-### **Advanced Features:**
-- Push notifications for reminders
-- Offline meditation downloads
-- Wearable device integration
-- Advanced progress analytics
-- Social sharing capabilities
-- Premium subscription features
-
-### **Technical Improvements:**
-- PWA (Progressive Web App) capabilities
-- Native app conversion (React Native)
-- Advanced animations (Framer Motion)
-- Voice recognition integration
-- Background audio support
-
-## 📋 Development Notes
-
-- **Mobile-first**: Designed exclusively for mobile viewports
-- **Touch-optimized**: All interactions work well on touch devices
-- **Performance**: Optimized for mobile performance
-- **Accessibility**: Emoji-based icons for universal understanding
-- **Theming**: Consistent design system with Tailwind classes
-
-## 🧘‍♀️ App Philosophy
-
-**SpeakMind** is designed to make meditation and mindfulness accessible, engaging, and social. The app combines:
-
-- **AI-powered guidance** for personalized experiences
-- **Community features** for motivation and support  
-- **Progress tracking** for long-term habit building
-- **Beautiful design** that encourages daily use
 
 ---
 
-**SpeakMind** - *Your pocket meditation companion for mindful living* 🪷✨
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## ⚡ Performance Optimizations
+
+SpeakMind is built with performance as a priority. Here are the key optimizations:
+
+### 🎯 React Performance
+- **React.memo** on frequently rendered components (BottomNavigation, ThemeToggle, LanguageToggle)
+- **useMemo/useCallback** in all context providers (Auth, Language, Theme)
+- **Lazy loading** for all screens and heavy components
+- **Suspense boundaries** for smooth loading states
+
+### 📦 Bundle Optimization
+- **Dynamic code splitting** - Screens grouped by usage frequency
+- **Vendor chunking** - React, Firebase, Framer Motion separated
+- **ES2020 target** - Smaller bundles for modern browsers
+- **Gzip & Brotli compression** - Automatic compression
+- **Tree shaking** - Unused code eliminated
+
+### 🚀 Build Configuration
+- **Terser minification** - Optimized JavaScript
+- **CSS minification** - Smaller stylesheets
+- **Asset optimization** - Hashed filenames for caching
+- **Modern module format** - ESM for better performance
+
+### 📊 Results
+- Initial bundle: < 200KB (gzipped)
+- Fast initial load with lazy-loaded routes
+- Minimal re-renders with memoization
+- Excellent Lighthouse scores
+
+---
+
+## 🌐 Supported Languages
+
+SpeakMind supports 12 languages out of the box:
+
+- 🇺🇸 English
+- 🇮🇳 Hindi (हिंदी)
+- 🇮🇳 Bengali (বাংলা)
+- 🇮🇳 Telugu (తెలుగు)
+- 🇮🇳 Marathi (मराठी)
+- 🇮🇳 Tamil (தமிழ்)
+- 🇮🇳 Gujarati (ગુજરાતી)
+- 🇮🇳 Kannada (ಕನ್ನಡ)
+- 🇮🇳 Malayalam (മലയാളം)
+- 🇮🇳 Punjabi (ਪੰਜਾਬੀ)
+- 🇮🇳 Odia (ଓଡ଼ିଆ)
+
+All UI text, navigation, and content adapt to the selected language.
+
+---
+
+## 🎨 Themes
+
+Choose from 6 beautiful color themes:
+
+1. **💜 Calm & Serene** (Purple) - Default
+2. **🌊 Ocean & Tranquility** (Blue)
+3. **🌿 Nature & Growth** (Green)
+4. **🔥 Energy & Warmth** (Orange)
+5. **💗 Love & Compassion** (Pink)
+6. **🔮 Deep Focus** (Indigo)
+
+Each theme includes light and dark mode variants.
+
+---
+
+## 📁 Project Structure
+
 ```
+SpeakMind/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── exercises/       # Meditation/wellness exercises
+│   │   ├── ui/             # UI primitives
+│   │   ├── BottomNavigation.tsx
+│   │   ├── ThemeToggle.tsx
+│   │   └── LanguageToggle.tsx
+│   ├── contexts/           # React contexts (Auth, Language, Theme)
+│   ├── screens/            # Main application screens
+│   ├── services/           # API services (Firestore, etc.)
+│   ├── utils/              # Utility functions & Logger
+│   ├── config/             # Firebase & API configuration
+│   ├── locales/            # Translation files (i18n)
+│   ├── hooks/              # Custom React hooks
+│   └── App.tsx             # Main app component
+├── public/                 # Static assets
+├── .env                    # Environment variables (create this)
+├── vite.config.ts         # Vite configuration
+├── tsconfig.json          # TypeScript configuration
+└── package.json           # Dependencies
+```
+
+---
+
+## 🔐 Security
+
+- ✅ Firebase Authentication with secure token management
+- ✅ API keys stored in environment variables
+- ✅ Serverless functions for sensitive operations
+- ✅ Firestore security rules for data protection
+- ✅ Input validation and sanitization
+- ✅ HTTPS-only in production
+
+---
+
+## 🧪 Testing & Quality
+
+### Code Quality
+- **TypeScript Strict Mode** - Enhanced type safety
+- **ESLint** - Code linting with React best practices
+- **Prettier** - Consistent code formatting
+- **No console.log in production** - Logger utility with dev-only output
+
+### Testing
+```bash
+# Lint code
+npm run lint
+
+# Type check
+npm run type-check
+
+# Build (includes checks)
+npm run build
+```
+
+---
+
+## 📝 Scripts
+
+```bash
+# Development
+npm run dev              # Start development server
+
+# Production
+npm run build           # Build for production
+npm run preview         # Preview production build
+
+# Code Quality
+npm run lint            # Run ESLint
+npm run type-check      # TypeScript type checking
+
+# Bundle Analysis
+npm run analyze         # Visualize bundle size
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Use React hooks and functional components
+- Maintain consistent code style (ESLint + Prettier)
+- Add comments for complex logic
+- Test your changes thoroughly
+- Update documentation as needed
+
+---
+
+## 🐛 Known Issues & Limitations
+
+- EEG Brain Health feature is experimental
+- Some meditation content requires internet connection
+- Offline mode has limited functionality
+- Voice sessions require microphone permissions
+
+---
+
+## 🗺️ Roadmap
+
+### Coming Soon
+- [ ] Progressive Web App (PWA) support
+- [ ] Push notifications for reminders
+- [ ] Offline mode improvements
+- [ ] More meditation content
+- [ ] Social features expansion
+- [ ] AI personality customization
+- [ ] Export journal data
+- [ ] Weekly/monthly wellness reports
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👨‍💻 Author
+
+**Ankur Rawat**
+- GitHub: [@ankurrawatll](https://github.com/ankurrawatll)
+
+---
+
+## 🙏 Acknowledgments
+
+- **Google Gemini AI** - For powerful AI capabilities
+- **Firebase** - For backend infrastructure
+- **React Community** - For excellent documentation and tools
+- **Tailwind CSS** - For beautiful styling utilities
+- **Framer Motion** - For smooth animations
+- **All Contributors** - Thank you for your support!
+
+---
+
+## 📞 Support
+
+If you have questions or need help:
+- Open an [Issue](https://github.com/ankurrawatll/SpeakMind/issues)
+- Check existing documentation
+- Review the code comments
+
+---
+
+<div align="center">
+
+### ⭐ If you find this project helpful, please give it a star!
+
+Made with ❤️ for mental wellness
+
+**SpeakMind** - *Your AI-Powered Mental Wellness Companion*
+
+</div>
