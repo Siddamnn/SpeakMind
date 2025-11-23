@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, addDoc, query, where, onSnapshot, deleteDoc, doc, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, query, where, onSnapshot, deleteDoc, doc, Timestamp, updateDoc, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Screen } from '../App'
@@ -31,22 +31,24 @@ interface ChatConversation {
 interface ForumReply {
   id: string
   content: string
-  author: string
-  timestamp: string
+  authorId: string
+  authorName: string
+  timestamp: Timestamp
   likes: number
-  isLiked: boolean
+  likedBy: string[]
 }
 
 interface ForumPost {
   id: string
   title: string
   content: string
-  author: string
-  timestamp: string
+  authorId: string
+  authorName: string
+  timestamp: Timestamp
   tags: string[]
   likes: number
+  likedBy: string[]
   replies: ForumReply[]
-  isLiked: boolean
 }
 
 interface Event {
@@ -131,100 +133,18 @@ const MOCK_CONVERSATIONS: ChatConversation[] = [
 ]
 
 // Mock data for forum posts
-const MOCK_POSTS: ForumPost[] = [
-  {
-    id: '1',
-    title: 'Dealing with Sunday anxiety - anyone else?',
-    content: 'Does anyone else get really anxious on Sunday nights thinking about the upcoming work week? I\'ve been trying different strategies but would love to hear what works for others.',
-    author: 'MindfulMike',
-    timestamp: '2 hours ago',
-    tags: ['anxiety', 'work-stress', 'sunday-scaries'],
-    likes: 24,
-    isLiked: false,
-    replies: [
-      {
-        id: '1',
-        content: 'Yes! I call it the "Sunday scaries". What helps me is planning something fun for Sunday evening - like watching a good movie or video calling a friend.',
-        author: 'ZenSeeker',
-        timestamp: '1 hour ago',
-        likes: 8,
-        isLiked: true
-      },
-      {
-        id: '2',
-        content: 'I prepare for Monday on Friday so I don\'t have to think about work over the weekend. Game changer!',
-        author: 'CalmCollector',
-        timestamp: '45 min ago',
-        likes: 12,
-        isLiked: false
-      },
-      {
-        id: '3',
-        content: 'Try a Sunday wind-down routine - tea, gentle music, maybe some journaling about what you\'re grateful for from the week.',
-        author: 'PeacefulPath',
-        timestamp: '30 min ago',
-        likes: 6,
-        isLiked: false
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Small wins in my mental health journey 🌱',
-    content: 'Been working on my mental health for 6 months now. Today I managed to do my morning meditation even though I didn\'t feel like it. Celebrating these small victories!',
-    author: 'GrowingDaily',
-    timestamp: '5 hours ago',
-    tags: ['progress', 'meditation', 'self-care', 'motivation'],
-    likes: 47,
-    isLiked: true,
-    replies: [
-      {
-        id: '1',
-        content: 'This is so inspiring! Those small consistent actions really add up over time. Proud of you! 💪',
-        author: 'SupportiveSoul',
-        timestamp: '4 hours ago',
-        likes: 15,
-        isLiked: false
-      },
-      {
-        id: '2',
-        content: 'Yes! I\'ve learned that showing up even when you don\'t feel like it is actually the most important time to do it.',
-        author: 'WisdomSeeker',
-        timestamp: '3 hours ago',
-        likes: 9,
-        isLiked: true
-      }
-    ]
-  },
-  {
-    id: '3',
-    title: 'Therapist recommendations for social anxiety?',
-    content: 'I\'m finally ready to seek professional help for my social anxiety. Does anyone have recommendations for finding the right therapist? What should I look for?',
-    author: 'TakingSteps',
-    timestamp: '1 day ago',
-    tags: ['therapy', 'social-anxiety', 'professional-help'],
-    likes: 18,
-    isLiked: false,
-    replies: [
-      {
-        id: '1',
-        content: 'Psychology Today has a great therapist finder. Look for someone who specializes in anxiety disorders and uses CBT or exposure therapy.',
-        author: 'TherapyAdvocate',
-        timestamp: '1 day ago',
-        likes: 22,
-        isLiked: false
-      },
-      {
-        id: '2',
-        content: 'Don\'t be afraid to schedule consultations with a few different therapists. The therapeutic relationship is so important!',
-        author: 'HealingJourney',
-        timestamp: '20 hours ago',
-        likes: 14,
-        isLiked: false
-      }
-    ]
-  }
-]
+// Helper to format timestamp
+const formatTimeAgo = (timestamp: Timestamp | undefined) => {
+  if (!timestamp) return ''
+  const date = timestamp.toDate()
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) return 'Just now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  return `${Math.floor(diffInSeconds / 86400)}d ago`
+}
 
 export default function SharingScreen({ onNavigate }: SharingScreenProps) {
   const { currentUser } = useAuth()
@@ -234,6 +154,8 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
   const [newPostTitle, setNewPostTitle] = useState('')
   const [newPostContent, setNewPostContent] = useState('')
   const [newPostTags, setNewPostTags] = useState('')
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyContent, setReplyContent] = useState('')
 
   // Events state
   const [selectedCity, setSelectedCity] = useState<string>('Mumbai')
@@ -251,18 +173,75 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
   const [locationError, setLocationError] = useState<string | null>(null)
 
   const [conversations] = useState<ChatConversation[]>(MOCK_CONVERSATIONS)
-  const [forumPosts, setForumPosts] = useState<ForumPost[]>(MOCK_POSTS)
+  const [forumPosts, setForumPosts] = useState<ForumPost[]>([])
+
+  // Fetch forum posts
+  useEffect(() => {
+    // Removing orderBy temporarily to avoid index creation issues during development
+    // and sorting client-side instead
+    const q = query(collection(db, 'forum_posts'))
+
+    console.log("Setting up Firestore listener for forum_posts...")
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log("Snapshot received!", {
+        size: snapshot.size,
+        empty: snapshot.empty,
+        metadata: {
+          fromCache: snapshot.metadata.fromCache,
+          hasPendingWrites: snapshot.metadata.hasPendingWrites
+        }
+      })
+
+      try {
+        const posts: ForumPost[] = []
+        snapshot.forEach((doc) => {
+          const data = doc.data()
+          posts.push({
+            id: doc.id,
+            ...data,
+            // Ensure arrays exist to prevent crashes
+            likedBy: data.likedBy || [],
+            replies: data.replies || [],
+            tags: data.tags || []
+          } as ForumPost)
+        })
+
+        console.log("Parsed posts:", posts.length)
+
+        // Sort client-side by timestamp desc
+        posts.sort((a, b) => {
+          const timeA = a.timestamp?.seconds || 0
+          const timeB = b.timestamp?.seconds || 0
+          return timeB - timeA
+        })
+
+        setForumPosts(posts)
+      } catch (error) {
+        console.error("Error processing forum posts:", error)
+      }
+    }, (error) => {
+      console.error("Error fetching forum posts:", error)
+      console.error("Error code:", error.code)
+      console.error("Error message:", error.message)
+    })
+
+    return () => {
+      console.log("Unsubscribing from forum_posts")
+      unsubscribe()
+    }
+  }, [])
 
   // Fetch events for selected city
   useEffect(() => {
     console.log('Fetching events for city:', selectedCity)
-    
+
     // Clear events first to ensure fresh data
     setEvents([])
-    
+
     const eventsRef = collection(db, 'events')
     const q = query(eventsRef, where('city', '==', selectedCity))
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedEvents: Event[] = []
       snapshot.forEach((doc) => {
@@ -418,59 +397,131 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       setNewEventDate('')
       setNewEventTime('')
       setShowNewEvent(false)
-      
+
     } catch (error) {
       console.error('Error creating event:', error)
       alert('Failed to create event. Please try again.')
     }
   }
 
-  const handleLikePost = (postId: string) => {
-    setForumPosts(posts => 
-      posts.map(post => 
-        post.id === postId 
-          ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-          : post
-      )
-    )
+  const handleLikePost = async (post: ForumPost) => {
+    if (!currentUser) {
+      alert('Please log in to like posts')
+      return
+    }
+    const postRef = doc(db, 'forum_posts', post.id)
+    const isLiked = post.likedBy.includes(currentUser.uid)
+
+    try {
+      await updateDoc(postRef, {
+        likes: isLiked ? post.likes - 1 : post.likes + 1,
+        likedBy: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+      })
+    } catch (error) {
+      console.error('Error updating like:', error)
+    }
   }
 
-  const handleLikeReply = (postId: string, replyId: string) => {
-    setForumPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? {
-              ...post,
-              replies: post.replies.map(reply =>
-                reply.id === replyId
-                  ? { ...reply, isLiked: !reply.isLiked, likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1 }
-                  : reply
-              )
-            }
-          : post
-      )
-    )
-  }
+  const handleLikeReply = async (post: ForumPost, reply: ForumReply) => {
+    if (!currentUser) {
+      alert('Please log in to like replies')
+      return
+    }
+    const postRef = doc(db, 'forum_posts', post.id)
+    const isLiked = reply.likedBy.includes(currentUser.uid)
 
-  const handleCreatePost = () => {
-    if (newPostTitle.trim() && newPostContent.trim()) {
-      const newPost: ForumPost = {
-        id: String(Date.now()),
-        title: newPostTitle.trim(),
-        content: newPostContent.trim(),
-        author: 'You',
-        timestamp: 'Just now',
-        tags: newPostTags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        likes: 0,
-        isLiked: false,
-        replies: []
+    const updatedReplies = post.replies.map(r => {
+      if (r.id === reply.id) {
+        return {
+          ...r,
+          likes: isLiked ? r.likes - 1 : r.likes + 1,
+          likedBy: isLiked ? r.likedBy.filter(id => id !== currentUser.uid) : [...r.likedBy, currentUser.uid]
+        }
       }
-      
-      setForumPosts([newPost, ...forumPosts])
-      setNewPostTitle('')
-      setNewPostContent('')
-      setNewPostTags('')
-      setShowNewPost(false)
+      return r
+    })
+
+    try {
+      await updateDoc(postRef, { replies: updatedReplies })
+    } catch (error) {
+      console.error('Error updating reply like:', error)
+    }
+  }
+
+  const handleCreatePost = async () => {
+    console.log('handleCreatePost called')
+    console.log('Current user:', currentUser)
+
+    if (!currentUser) {
+      alert('Please log in to create a post')
+      return
+    }
+
+    console.log('Post data:', {
+      title: newPostTitle.trim(),
+      content: newPostContent.trim(),
+      tags: newPostTags
+    })
+
+    if (newPostTitle.trim() && newPostContent.trim()) {
+      try {
+        console.log('Attempting to create post in Firestore...')
+        const docRef = await addDoc(collection(db, 'forum_posts'), {
+          title: newPostTitle.trim(),
+          content: newPostContent.trim(),
+          authorId: currentUser.uid,
+          authorName: currentUser.displayName || 'Anonymous',
+          timestamp: Timestamp.now(),
+          tags: newPostTags.split(',').map(tag => tag.trim()).filter(tag => tag),
+          likes: 0,
+          likedBy: [],
+          replies: []
+        })
+        console.log('✅ Post created successfully! Doc ID:', docRef.id)
+
+        setNewPostTitle('')
+        setNewPostContent('')
+        setNewPostTags('')
+        setShowNewPost(false)
+      } catch (error) {
+        console.error('❌ Error creating post:', error)
+        console.error('Error code:', error.code)
+        console.error('Error message:', error.message)
+        alert('Failed to create post: ' + error.message)
+      }
+    } else {
+      console.warn('Title or content is empty')
+      alert('Please fill in both title and content')
+    }
+  }
+
+  const handleReplyPost = async (postId: string) => {
+    if (!currentUser) {
+      alert('Please log in to reply')
+      return
+    }
+    if (!replyContent.trim()) return
+
+    const postRef = doc(db, 'forum_posts', postId)
+    const newReply: ForumReply = {
+      id: Date.now().toString(),
+      content: replyContent.trim(),
+      authorId: currentUser.uid,
+      authorName: currentUser.displayName || 'Anonymous',
+      timestamp: Timestamp.now(),
+      likes: 0,
+      likedBy: []
+    }
+
+    try {
+      await updateDoc(postRef, {
+        replies: arrayUnion(newReply)
+      })
+      setReplyContent('')
+      setReplyingTo(null)
+    } catch (error) {
+      console.error('Error replying:', error)
+      alert('Failed to reply')
     }
   }
 
@@ -481,11 +532,11 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
         {/* Chat Header */}
         <div className="px-4 pt-12 pb-4 border-b border-gray-100">
           <div className="flex items-center space-x-4">
-            <button 
+            <button
               onClick={() => setSelectedChat(null)}
               className="text-gray-600 hover:text-gray-800"
             >
-              ← 
+              ←
             </button>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
@@ -520,11 +571,10 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                   </div>
                 )}
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${
-                    message.isOwn 
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
-                      : 'bg-white text-gray-800 border border-gray-200'
-                  }`}
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${message.isOwn
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                    : 'bg-white text-gray-800 border border-gray-200'
+                    }`}
                 >
                   <p className="text-sm">{message.message}</p>
                   <p className={`text-xs mt-1 ${message.isOwn ? 'text-white/80' : 'text-gray-500'}`}>
@@ -591,21 +641,19 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('forum')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'forum' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'forum'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Forum
             </button>
             <button
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'chat' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'chat'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Support Chat
             </button>
@@ -623,84 +671,131 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
           <div>
             {/* Forum Posts */}
             <div className="space-y-4">
-              {forumPosts.map((post) => (
-                <div key={post.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-start space-x-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">
-                      👤
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-gray-900">{post.author}</span>
-                          <span className="text-gray-500 text-sm ml-2">{post.timestamp}</span>
+              {forumPosts.map((post) => {
+                const isLiked = currentUser ? post.likedBy.includes(currentUser.uid) : false
+                return (
+                  <div key={post.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-start space-x-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">
+                        👤
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-medium text-gray-900">{post.authorName}</span>
+                            <span className="text-gray-500 text-sm ml-2">{formatTimeAgo(post.timestamp)}</span>
+                          </div>
+                          <button
+                            onClick={() => handleLikePost(post)}
+                            className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm ${isLiked ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'
+                              }`}
+                          >
+                            <span>{isLiked ? '❤️' : '🤍'}</span>
+                            <span>{post.likes}</span>
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleLikePost(post.id)}
-                          className={`flex items-center space-x-1 px-2 py-1 rounded-full text-sm ${
-                            post.isLiked ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'
-                          }`}
-                        >
-                          <span>{post.isLiked ? '❤️' : '🤍'}</span>
-                          <span>{post.likes}</span>
-                        </button>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="ml-13">
-                    <h3 className="font-medium text-gray-900 mb-2">{post.title}</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">{post.content}</p>
-                  </div>
-                  
-                  {post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3 ml-13">
-                      {post.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 text-xs rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+
+                    <div className="ml-13">
+                      <h3 className="font-medium text-gray-900 mb-2">{post.title}</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">{post.content}</p>
                     </div>
-                  )}
-                  
-                  {/* Replies */}
-                  {post.replies.length > 0 && (
-                    <div className="border-t border-gray-100 mt-4 pt-4 space-y-3">
-                      {post.replies.map((reply) => (
-                        <div key={reply.id} className="bg-white border border-gray-100 p-3 rounded-xl ml-13 shadow-sm">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-                                👤
+
+                    {post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3 ml-13">
+                        {post.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-1 text-xs rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Replies */}
+                    {post.replies.length > 0 && (
+                      <div className="border-t border-gray-100 mt-4 pt-4 space-y-3">
+                        {post.replies.map((reply) => {
+                          const isReplyLiked = currentUser ? reply.likedBy.includes(currentUser.uid) : false
+                          return (
+                            <div key={reply.id} className="bg-white border border-gray-100 p-3 rounded-xl ml-13 shadow-sm">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
+                                    👤
+                                  </div>
+                                  <span className="font-medium text-gray-900 text-sm">{reply.authorName}</span>
+                                  <span className="text-gray-500 text-xs">{formatTimeAgo(reply.timestamp)}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleLikeReply(post, reply)}
+                                  className={`flex items-center space-x-1 text-xs ${isReplyLiked ? 'text-rose-400' : 'text-gray-400 hover:text-rose-400'
+                                    }`}
+                                >
+                                  <span>{isReplyLiked ? '❤️' : '🤍'}</span>
+                                  <span>{reply.likes}</span>
+                                </button>
                               </div>
-                              <span className="font-medium text-gray-900 text-sm">{reply.author}</span>
-                              <span className="text-gray-500 text-xs">{reply.timestamp}</span>
+                              <p className="text-gray-600 text-sm">{reply.content}</p>
                             </div>
-                            <button
-                              onClick={() => handleLikeReply(post.id, reply.id)}
-                              className={`flex items-center space-x-1 text-xs ${
-                                reply.isLiked ? 'text-rose-400' : 'text-gray-400 hover:text-rose-400'
-                              }`}
-                            >
-                              <span>{reply.isLiked ? '❤️' : '🤍'}</span>
-                              <span>{reply.likes}</span>
-                            </button>
-                          </div>
-                          <p className="text-gray-600 text-sm">{reply.content}</p>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Reply Button & Input */}
+                    <div className="mt-3 ml-13">
+                      {replyingTo === post.id ? (
+                        <div className="flex items-center space-x-2 mt-2">
+                          <input
+                            type="text"
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Write a reply..."
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-purple-500"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleReplyPost(post.id)}
+                            disabled={!replyContent.trim()}
+                            className="p-2 bg-purple-500 text-white rounded-full disabled:opacity-50 hover:bg-purple-600 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setReplyingTo(null)
+                              setReplyContent('')
+                            }}
+                            className="p-2 text-gray-400 hover:text-gray-600"
+                          >
+                            ✕
+                          </button>
                         </div>
-                      ))}
+                      ) : (
+                        <button
+                          onClick={() => setReplyingTo(post.id)}
+                          className="text-sm text-gray-500 hover:text-purple-600 font-medium flex items-center space-x-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          <span>Reply</span>
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
 
-        {/* Chat Tab */}
         {activeTab === 'chat' && (
           <div className="pb-6">
             <div className="space-y-3">
@@ -721,7 +816,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-gray-900">{conversation.participant}</h4>
@@ -741,7 +836,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl w-full max-w-md p-6">
               <h3 className="text-lg font-semibold mb-4 text-gray-900">Create New Post</h3>
-              
+
               <input
                 type="text"
                 placeholder="Post title..."
@@ -749,7 +844,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                 onChange={(e) => setNewPostTitle(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:outline-none focus:border-purple-500"
               />
-              
+
               <textarea
                 placeholder="Share your thoughts, experiences, or questions..."
                 value={newPostContent}
@@ -757,7 +852,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                 rows={4}
                 className="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:outline-none focus:border-purple-500 resize-none"
               />
-              
+
               <input
                 type="text"
                 placeholder="Tags (separate with commas)"
@@ -765,7 +860,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                 onChange={(e) => setNewPostTags(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-purple-500"
               />
-              
+
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowNewPost(false)}
@@ -794,7 +889,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
                 className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
-                style={{ 
+                style={{
                   backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%23374151\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
                   backgroundPosition: 'right 0.5rem center',
                   backgroundRepeat: 'no-repeat',
@@ -993,7 +1088,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
               <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                 <div className="bg-white/95 rounded-2xl w-full max-w-sm p-5 backdrop-blur-md max-h-[90vh] overflow-y-auto">
                   <h3 className="text-base font-semibold mb-3">Create New Event</h3>
-                  
+
                   <div className="space-y-2.5">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Event Title</label>
@@ -1005,7 +1100,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                         className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-primary-purple"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Address</label>
                       <textarea
@@ -1016,14 +1111,14 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                         className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-primary-purple resize-none"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
                       <div className="px-2.5 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
                         {selectedCity}
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
                       <input
@@ -1034,7 +1129,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                         className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-primary-purple"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Time</label>
                       <input
@@ -1045,7 +1140,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-3 mt-4">
                     <button
                       onClick={() => {
