@@ -1,7 +1,9 @@
 // src/screens/MeditationScreen.tsx
-import { useEffect } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { IoFitness, IoMoon, IoHeart, IoHappy, IoPeople, IoSparkles, IoFlame, IoBody, IoJournal } from 'react-icons/io5';
 
 interface Exercise {
   id: string;
@@ -10,10 +12,12 @@ interface Exercise {
   category: string;
   duration: number;
   image: string;
+  size: 'small' | 'medium' | 'large' | 'wide' | 'tall';
   color: string;
-  icon: string;
+  gradient: string;
+  icon: React.ReactNode;
+  customRowSpan?: number; // Optional custom row-span override
 }
-
 
 interface MeditationScreenProps {
   onNavigate?: (screen: any) => void;
@@ -21,8 +25,11 @@ interface MeditationScreenProps {
 
 const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
   const { t } = useLanguage();
+  const { colors } = useTheme();
   
-  const exercises: Exercise[] = [
+  // Windows 8-style tiles with varied sizes for organized layout
+  // Reorganized for better visual flow, proper spacing, and minimal gaps
+  const exercises: Exercise[] = useMemo(() => [
     {
       id: 'quick-calm',
       titleKey: 'meditation.quickCalm',
@@ -30,8 +37,58 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       category: 'breathing',
       duration: 5,
       image: 'https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
-      color: 'from-teal-500/90 to-emerald-600/90',
-      icon: '🧘‍♂️',
+      size: 'large',
+      color: 'from-teal-500 to-emerald-600',
+      gradient: 'linear-gradient(135deg, #14b8a6 0%, #059669 100%)',
+      icon: <IoFitness className="w-6 h-6" />,
+    },
+    {
+      id: 'stress-buster',
+      titleKey: 'meditation.stressBuster',
+      descriptionKey: 'meditation.stressBusterDesc',
+      category: 'stress-relief',
+      duration: 7,
+      image: 'https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'tall',
+      color: 'from-orange-500 to-red-600',
+      gradient: 'linear-gradient(135deg, #f97316 0%, #dc2626 100%)',
+      icon: <IoFlame className="w-6 h-6" />,
+    },
+    {
+      id: 'anxiety-sos',
+      titleKey: 'meditation.anxietySOS',
+      descriptionKey: 'meditation.anxietySOSDesc',
+      category: 'anxiety',
+      duration: 10,
+      image: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'medium',
+      color: 'from-blue-500 to-cyan-600',
+      gradient: 'linear-gradient(135deg, #3b82f6 0%, #0891b2 100%)',
+      icon: <IoHeart className="w-6 h-6" />,
+    },
+    {
+      id: 'mood-booster',
+      titleKey: 'meditation.moodBooster',
+      descriptionKey: 'meditation.moodBoosterDesc',
+      category: 'mood',
+      duration: 8,
+      image: 'https://images.pexels.com/photos/4056723/pexels-photo-4056723.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'medium',
+      color: 'from-yellow-500 to-orange-500',
+      gradient: 'linear-gradient(135deg, #eab308 0%, #f97316 100%)',
+      icon: <IoHappy className="w-6 h-6" />,
+    },
+    {
+      id: 'social-confidence',
+      titleKey: 'meditation.socialConfidence',
+      descriptionKey: 'meditation.socialConfidenceDesc',
+      category: 'confidence',
+      duration: 12,
+      image: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'medium', // Increased from small to medium (25% size increase)
+      color: 'from-pink-500 to-rose-600',
+      gradient: 'linear-gradient(135deg, #ec4899 0%, #e11d48 100%)',
+      icon: <IoPeople className="w-6 h-6" />,
     },
     {
       id: 'stretch-focus',
@@ -40,8 +97,10 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       category: 'movement',
       duration: 10,
       image: 'https://images.pexels.com/photos/3768918/pexels-photo-3768918.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
-      color: 'from-amber-500/90 to-orange-600/90',
-      icon: '🧘‍♀️',
+      size: 'tall', // Increased to tall (row-span-3) to fill gap
+      color: 'from-amber-500 to-orange-600',
+      gradient: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+      icon: <IoBody className="w-6 h-6" />,
     },
     {
       id: 'mind-body-sync',
@@ -50,8 +109,23 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       category: 'mindfulness',
       duration: 15,
       image: 'https://images.pexels.com/photos/4056723/pexels-photo-4056723.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
-      color: 'from-indigo-500/90 to-violet-600/90',
-      icon: '🎯',
+      size: 'medium', // Increased from small to medium (25% size increase)
+      color: 'from-violet-500 to-purple-600',
+      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #9333ea 100%)',
+      icon: <IoSparkles className="w-6 h-6" />,
+    },
+    {
+      id: 'sleep-stories',
+      titleKey: 'meditation.sleepStories',
+      descriptionKey: 'meditation.sleepStoriesDesc',
+      category: 'sleep',
+      duration: 20,
+      image: 'https://images.pexels.com/photos/18554368/pexels-photo-18554368.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      size: 'wide',
+      customRowSpan: 2, // 15% height increase - use row-span-2 for proper spacing
+      color: 'from-indigo-500 to-purple-600',
+      gradient: 'linear-gradient(135deg, #6366f1 0%, #9333ea 100%)',
+      icon: <IoMoon className="w-6 h-6" />,
     },
     {
       id: 'reflection-journal',
@@ -60,10 +134,12 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       category: 'reflection',
       duration: 3,
       image: 'https://images.pexels.com/photos/6621339/pexels-photo-6621339.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
-      color: 'from-rose-500/90 to-pink-600/90',
-      icon: '📝',
+      size: 'wide',
+      color: 'from-rose-500 to-pink-600',
+      gradient: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
+      icon: <IoJournal className="w-6 h-6" />,
     },
-  ];
+  ], []);
 
   // Load progress from localStorage (for future use)
   useEffect(() => {
@@ -80,7 +156,12 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
         'quick-calm': 'exercise-quick-calm',
         'stretch-focus': 'exercise-stretch-focus',
         'mind-body-sync': 'exercise-mind-body-sync',
-        'reflection-journal': 'journal'
+        'reflection-journal': 'journal',
+        'stress-buster': 'exercise-stress-buster',
+        'sleep-stories': 'exercise-sleep-stories',
+        'anxiety-sos': 'exercise-anxiety-sos',
+        'mood-booster': 'exercise-mood-booster',
+        'social-confidence': 'exercise-social-confidence',
       };
       
       const screenName = exerciseScreenMap[exerciseId];
@@ -94,82 +175,145 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg relative pb-20 transition-colors duration-300">
-        {/* Content */}
-        <div className="relative">
-          {/* Simple Header */}
-          <div className="px-4 md:px-8 lg:px-12 pt-6 md:pt-8 pb-4 md:pb-6">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="w-8 md:w-10"></div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text text-center">{t('meditation.mindfulMoments')}</h1>
-            <button
-              onClick={() => onNavigate('profile')}
-              className="p-1.5 md:p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors"
-            >
-              <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-          </div>
-        </div>
+  // Memoized function to get tile size classes
+  const getTileSizeClasses = useCallback((size: string, customRowSpan?: number) => {
+    switch (size) {
+      case 'small':
+        return 'col-span-1 row-span-1' // 1x1 - smallest
+      case 'medium':
+        return 'col-span-1 row-span-2' // 1x2 - tall
+      case 'large':
+        return 'col-span-2 row-span-2' // 2x2 - square large
+      case 'wide':
+        // Use customRowSpan if provided, otherwise default to row-span-1
+        if (customRowSpan) {
+          return `col-span-2 row-span-[${customRowSpan}]` // Use Tailwind arbitrary value
+        }
+        return 'col-span-2 row-span-1' // 2x1 - wide
+      case 'tall':
+        return 'col-span-1 row-span-3' // 1x3 - extra tall
+      default:
+        return 'col-span-1 row-span-1'
+    }
+  }, [])
+  
+  
+  // Memoized hover handlers
+  const handleTileMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const element = e.currentTarget
+    element.style.boxShadow = `0 0 20px ${colors.primary}80, 0 0 40px ${colors.primary}40, 0 0 60px ${colors.primary}20`
+    element.style.borderColor = colors.primary
+  }, [colors.primary])
+  
+  const handleTileMouseLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const element = e.currentTarget
+    element.style.boxShadow = ''
+    element.style.borderColor = 'transparent'
+  }, [])
 
-        {/* Exercise Grid */}
-        <div className="px-4 md:px-8 lg:px-12">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-blue-50/30 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-20 transition-colors duration-300">
+      {/* Header */}
+      <div className="px-4 pt-6 pb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-dark-text">
+            {t('meditation.mindfulMoments')}
+          </h1>
+          <button
+            onClick={() => onNavigate?.('profile')}
+            className="p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors"
+          >
+            <svg className="w-6 h-6 text-gray-600 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-4">
+          {t('meditation.subtitle') || 'Choose an exercise to begin your wellness journey'}
+        </p>
+      </div>
+
+      {/* Windows 8-Style Tile Grid */}
+      <div className="px-4">
+        <div className="grid grid-cols-2 gap-3 auto-rows-[100px]" style={{ gridAutoFlow: 'dense' }}>
           {exercises.map((exercise) => (
-            <motion.div
+            <motion.button
               key={exercise.id}
               onClick={() => handleExercisePress(exercise.id)}
               whileTap={{ scale: 0.98 }}
-              className="relative rounded-xl md:rounded-2xl overflow-hidden h-36 md:h-40 lg:h-44 flex items-end p-4 md:p-6 cursor-pointer shadow-sm"
+              className={`${getTileSizeClasses(exercise.size, exercise.customRowSpan)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]`}
+              style={{
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease'
+              } as React.CSSProperties}
+              onMouseEnter={handleTileMouseEnter}
+              onMouseLeave={handleTileMouseLeave}
             >
               {/* Background Image */}
-              <div className="absolute inset-0 z-0">
+              <div className="absolute inset-0">
                 <img
                   src={exercise.image}
-                  alt={exercise.title}
-                  className="w-full h-full object-cover"
+                  alt={t(exercise.titleKey)}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
                 />
-                <div className="absolute inset-0 bg-black/40" />
+                {/* Gradient Overlay - Reduced by 20% (from 0.10 to 0.08) */}
+                <div 
+                  className={`absolute inset-0 bg-gradient-to-br ${exercise.color} opacity-8 group-hover:opacity-12 transition-opacity`}
+                  style={{
+                    background: exercise.gradient,
+                    opacity: 0.08
+                  }}
+                />
+                {/* Dark Overlay for Text Readability - Reduced for better image visibility */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
               </div>
 
-              {/* Content */}
-              <div className="relative z-10 w-full">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <h3 className="text-white text-lg md:text-xl font-semibold mb-0.5 md:mb-1">{t(exercise.titleKey)}</h3>
-                    <p className="text-white/90 text-xs md:text-sm mb-1.5 md:mb-2">{t(exercise.descriptionKey)}</p>
-                    <div className="flex items-center text-[10px] md:text-xs text-white/80">
-                      <div className="bg-white/20 backdrop-blur px-2 md:px-3 py-0.5 md:py-1 rounded-full flex items-center gap-0.5 md:gap-1">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-white md:w-3 md:h-3">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                          <polyline points="12,6 12,12 16,14" stroke="currentColor" strokeWidth="2"/>
-                        </svg>
-                        <span>{exercise.duration} {t('meditation.min')}</span>
-                      </div>
+              {/* Glassmorphism Content Container */}
+              <div className="relative z-10 h-full flex flex-col justify-between p-3 text-white">
+                <div>
+                  {/* Icon with Glassmorphism */}
+                  <div className="mb-2 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/10 flex items-center justify-center shadow-lg">
+                      {exercise.icon}
                     </div>
                   </div>
-                  {/* Play Button */}
-                  <div className="bg-white rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center shadow-lg">
-                    <svg 
-                      width="14" 
-                      height="14" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      className="text-purple-800 ml-0.5 md:w-4 md:h-4"
-                    >
-                      <path 
-                        d="M8 5v14l11-7z" 
-                        fill="currentColor"
-                      />
+                  <h3 className="font-bold text-sm md:text-base leading-tight mb-1 drop-shadow-lg">
+                    {t(exercise.titleKey)}
+                  </h3>
+                  <p className="text-xs opacity-90 drop-shadow line-clamp-2">
+                    {t(exercise.descriptionKey)}
+                  </p>
+                </div>
+                
+                {/* Bottom Section with Duration Badge */}
+                <div className="flex items-center justify-between">
+                  {/* Duration Badge with Glassmorphism */}
+                  <div className="bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/30 dark:border-white/20 px-2 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                      <polyline points="12,6 12,12 16,14" stroke="currentColor" strokeWidth="2"/>
                     </svg>
+                    <span className="text-[10px] font-medium">{exercise.duration} {t('meditation.min')}</span>
+                  </div>
+                  
+                  {/* Play Button with Glassmorphism */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-7 h-7 bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/30 dark:border-white/20 rounded-full flex items-center justify-center shadow-lg">
+                      <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
+
+              {/* Shine Effect on Hover */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+              </div>
+            </motion.button>
           ))}
-        </div>
         </div>
       </div>
     </div>

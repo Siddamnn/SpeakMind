@@ -8,12 +8,14 @@ import { BsEmojiSmile } from 'react-icons/bs'
 import { CiCamera, CiImageOn } from 'react-icons/ci'
 import { FaMicrophone } from 'react-icons/fa6'
 import { IoSendSharp, IoChevronBack, IoVolumeHigh, IoLanguage, IoPlay } from 'react-icons/io5'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface AskQuestionScreenProps {
   onNavigate: (screen: Screen) => void
 }
 
 export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps) {
+  const { colors, isDark } = useTheme()
   const [question, setQuestion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState<string | null>(null)
@@ -260,29 +262,29 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-24 transition-colors duration-300">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-white/30">
+      <div className="sticky top-0 z-30 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-white/30 dark:border-dark-border/30">
         <div className="flex items-center justify-between p-4">
           <button
             onClick={() => onNavigate('home')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-dark-card-hover rounded-full transition-colors"
           >
-            <IoChevronBack className="w-6 h-6 text-gray-700" />
+            <IoChevronBack className="w-6 h-6 text-gray-700 dark:text-dark-text" />
           </button>
           <div className="text-center">
-            <h1 className="text-lg font-semibold text-gray-900">Ask your Question</h1>
-            <p className="text-sm text-gray-500">AI-powered guidance</p>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Ask your Question</h1>
+            <p className="text-sm text-gray-500 dark:text-dark-text-secondary">AI-powered guidance</p>
           </div>
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-dark-card-hover rounded-full transition-colors"
             >
-              <IoLanguage className="w-6 h-6 text-gray-700" />
+              <IoLanguage className="w-6 h-6 text-gray-700 dark:text-dark-text" />
             </button>
             {showLanguageMenu && (
-              <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 w-48 max-h-64 overflow-y-auto">
+              <div className="absolute right-0 top-12 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-2xl shadow-lg z-50 w-48 max-h-64 overflow-y-auto">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
@@ -290,8 +292,12 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
                       setSelectedLanguage(lang.code)
                       setShowLanguageMenu(false)
                     }}
-                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-3 ${
-                      selectedLanguage === lang.code ? 'bg-purple-50 text-purple-700' : 'text-gray-700'
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-card-hover flex items-center space-x-3 ${
+                      selectedLanguage === lang.code 
+                        ? isDark 
+                          ? 'bg-purple-900/30 text-purple-300' 
+                          : 'bg-purple-50 text-purple-700' 
+                        : 'text-gray-700 dark:text-dark-text'
                     }`}
                   >
                     <span className="text-lg">{lang.flag}</span>
@@ -327,15 +333,17 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
         {/* AI Response Card */}
         {aiResponse && (
           <div className="px-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border border-purple-100 shadow-lg">
+            <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-purple-100 dark:border-dark-border shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-md">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{
+                    background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+                  }}>
                     <span className="text-white text-xs font-bold">AI</span>
                   </div>
                   <div>
-                    <span className="text-gray-900 font-semibold text-sm block">AI Assistant</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-gray-900 dark:text-dark-text font-semibold text-sm block">AI Assistant</span>
+                    <span className="text-xs text-gray-500 dark:text-dark-text-secondary">
                       {languages.find(l => l.code === selectedLanguage)?.flag} {languages.find(l => l.code === selectedLanguage)?.name}
                     </span>
                   </div>
@@ -344,21 +352,25 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
                   onClick={() => speakResponse(aiResponse)}
                   className={`p-2 rounded-full transition-all ${
                     isSpeaking 
-                      ? 'bg-purple-100 text-purple-600' 
-                      : 'bg-gray-100 hover:bg-purple-100 text-gray-600 hover:text-purple-600'
+                      ? isDark
+                        ? 'bg-purple-900/30 text-purple-300'
+                        : 'bg-purple-100 text-purple-600'
+                      : isDark
+                        ? 'bg-gray-800/30 hover:bg-purple-900/30 text-gray-300 hover:text-purple-300'
+                        : 'bg-gray-100 hover:bg-purple-100 text-gray-600 hover:text-purple-600'
                   }`}
                   disabled={isSpeaking}
                 >
                   <IoVolumeHigh className="w-5 h-5" />
                 </button>
               </div>
-              <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap mb-4">
+              <div className="text-gray-800 dark:text-dark-text text-sm leading-relaxed whitespace-pre-wrap mb-4">
                 {aiResponse}
               </div>
               {/* Video suggestions */}
               {videoSuggestions && videoSuggestions.length > 0 && (
-                <div className="mt-5 pt-4 border-t border-gray-100">
-                  <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Recommended Videos</h3>
+                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-dark-border">
+                  <h3 className="text-xs font-semibold text-gray-700 dark:text-dark-text-secondary mb-3 uppercase tracking-wide">Recommended Videos</h3>
                   <div className="grid grid-cols-1 gap-3">
                     {videoSuggestions.map(v => (
                       <a 
@@ -366,7 +378,7 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
                         href={v.url} 
                         target="_blank" 
                         rel="noreferrer" 
-                        className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 hover:border-purple-300 hover:shadow-md transition-all group"
+                        className="flex items-center gap-3 p-3 bg-white dark:bg-dark-card rounded-xl border border-gray-100 dark:border-dark-border hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-md transition-all group"
                       >
                         <div className="relative w-28 h-20 flex-shrink-0 rounded-lg overflow-hidden">
                           <img 
@@ -379,8 +391,8 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">{v.title}</div>
-                          <div className="text-xs text-gray-500">{v.channelTitle}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-dark-text line-clamp-2 mb-1">{v.title}</div>
+                          <div className="text-xs text-gray-500 dark:text-dark-text-secondary">{v.channelTitle}</div>
                         </div>
                       </a>
                     ))}
@@ -393,21 +405,29 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
 
         {/* Ask Question Section - Fixed at bottom */}
         <div className="px-4">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 shadow-lg">
+          <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 dark:border-dark-border shadow-lg">
             {/* Tips */}
             {!aiResponse && (
-              <div className="mb-4 pb-4 border-b border-gray-100">
-                <div className="text-xs text-gray-500 mb-2 font-medium">💡 Try asking:</div>
+              <div className="mb-4 pb-4 border-b border-gray-100 dark:border-dark-border">
+                <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-2 font-medium">💡 Try asking:</div>
                 <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => setQuestion('Suggest me videos to deal with anxiety')}
-                    className="text-xs px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full border border-purple-200 hover:bg-purple-100 transition-colors"
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      isDark
+                        ? 'bg-purple-900/30 text-purple-300 border-purple-700/50 hover:bg-purple-900/40'
+                        : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                    }`}
                   >
                     Videos for anxiety
                   </button>
                   <button
                     onClick={() => setQuestion('Recommend a 20 minute mindfulness meditation')}
-                    className="text-xs px-3 py-1.5 bg-gray-50 text-gray-700 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors"
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      isDark
+                        ? 'bg-gray-800/30 text-gray-300 border-gray-700/50 hover:bg-gray-800/40'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                    }`}
                   >
                     20 min meditation
                   </button>
@@ -419,18 +439,30 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder={`Ask anything in ${languages.find(l => l.code === selectedLanguage)?.name || 'English'}...`}
-              className="w-full text-gray-700 placeholder-gray-400 bg-transparent border-none outline-none text-sm resize-none min-h-[80px]"
+              className="w-full text-gray-700 dark:text-dark-text placeholder-gray-400 dark:placeholder-gray-500 bg-transparent border-none outline-none text-sm resize-none min-h-[80px]"
               rows={3}
             />
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-              <div className="flex space-x-3 text-gray-400 items-center">
-                <button aria-label="emoji" className="hover:text-purple-600 transition-colors p-1.5 hover:bg-purple-50 rounded-lg">
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-dark-border">
+              <div className="flex space-x-3 text-gray-400 dark:text-gray-500 items-center">
+                <button aria-label="emoji" className={`transition-colors p-1.5 rounded-lg ${
+                  isDark
+                    ? 'hover:text-purple-400 hover:bg-purple-900/30'
+                    : 'hover:text-purple-600 hover:bg-purple-50'
+                }`}>
                   <BsEmojiSmile className="w-5 h-5" />
                 </button>
-                <button aria-label="camera" className="hover:text-purple-600 transition-colors p-1.5 hover:bg-purple-50 rounded-lg">
+                <button aria-label="camera" className={`transition-colors p-1.5 rounded-lg ${
+                  isDark
+                    ? 'hover:text-purple-400 hover:bg-purple-900/30'
+                    : 'hover:text-purple-600 hover:bg-purple-50'
+                }`}>
                   <CiCamera className="w-5 h-5" />
                 </button>
-                <button aria-label="image" className="hover:text-purple-600 transition-colors p-1.5 hover:bg-purple-50 rounded-lg">
+                <button aria-label="image" className={`transition-colors p-1.5 rounded-lg ${
+                  isDark
+                    ? 'hover:text-purple-400 hover:bg-purple-900/30'
+                    : 'hover:text-purple-600 hover:bg-purple-50'
+                }`}>
                   <CiImageOn className="w-5 h-5" />
                 </button>
                 <button 
@@ -438,8 +470,12 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
                   onClick={toggleRecording} 
                   className={`transition-all p-1.5 rounded-lg ${
                     isRecording 
-                      ? 'text-purple-600 bg-purple-100' 
-                      : 'hover:text-purple-600 hover:bg-purple-50'
+                      ? isDark
+                        ? 'text-purple-300 bg-purple-900/30'
+                        : 'text-purple-600 bg-purple-100'
+                      : isDark
+                        ? 'hover:text-purple-400 hover:bg-purple-900/30'
+                        : 'hover:text-purple-600 hover:bg-purple-50'
                   }`}
                 >
                   <FaMicrophone className="w-5 h-5" />

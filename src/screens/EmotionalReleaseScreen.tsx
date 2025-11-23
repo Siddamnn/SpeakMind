@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Screen } from '../App'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface EmotionalReleaseScreenProps {
   onNavigate: (screen: Screen) => void
@@ -23,6 +24,7 @@ interface BreathingSession {
 type SessionState = 'selection' | 'active' | 'paused' | 'completed'
 
 export default function EmotionalReleaseScreen({ onNavigate, user: _user }: EmotionalReleaseScreenProps) {
+  const { colors, isDark } = useTheme()
   const [sessionState, setSessionState] = useState<SessionState>('selection')
   const [selectedSession, setSelectedSession] = useState<BreathingSession | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(0) // in seconds
@@ -147,14 +149,15 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
     <div className="flex items-center justify-center mb-8">
       <div className="relative">
         <div 
-          className={`w-48 h-48 rounded-full bg-gradient-to-br from-primary-purple to-primary-pink transition-all duration-4000 ease-in-out ${
+          className={`w-48 h-48 rounded-full transition-all duration-4000 ease-in-out ${
             isBreathingIn ? 'scale-100 opacity-80' : 'scale-75 opacity-60'
           }`}
           style={{
+            background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`,
             transitionDuration: '4000ms',
             boxShadow: isBreathingIn 
-              ? '0 0 50px rgba(157, 124, 243, 0.6)' 
-              : '0 0 20px rgba(157, 124, 243, 0.3)'
+              ? `0 0 50px ${colors.primary}60` 
+              : `0 0 20px ${colors.primary}30`
           }}
         />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -173,9 +176,11 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
   if (sessionState === 'selection') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-24 transition-colors duration-300">
         {/* Header */}
-        <div className="gradient-bg px-6 pt-12 pb-6 rounded-b-5xl">
+        <div className="px-6 pt-12 pb-6 rounded-b-5xl" style={{
+          background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+        }}>
           <div className="flex items-center justify-between mb-4">
             <button 
               onClick={() => onNavigate('home')}
@@ -190,11 +195,11 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
         <div className="px-6 -mt-4">
           {/* Description Card */}
-          <div className="card mb-6">
+          <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-dark-border shadow-lg mb-6">
             <div className="text-center">
               <div className="text-4xl mb-4">🫁</div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Guided Breathing</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-2">Guided Breathing</h3>
+              <p className="text-gray-600 dark:text-dark-text-secondary text-sm leading-relaxed">
                 Release stress and tension through mindful breathing exercises. 
                 Choose your session duration and let the gentle guide help you find calm.
               </p>
@@ -203,29 +208,29 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
           {/* Session Options */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Choose Your Session</h3>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">Choose Your Session</h3>
             <div className="grid grid-cols-2 gap-3">
               {breathingSessions.map((session) => (
                 <div
                   key={session.duration}
-                  className="card p-4 cursor-pointer transition-transform active:scale-95 text-center"
+                  className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 dark:border-dark-border shadow-lg cursor-pointer transition-transform active:scale-95 text-center"
                   onClick={() => startSession(session)}
                 >
                   <div className="text-3xl mb-2">{session.icon}</div>
-                  <h4 className="font-semibold text-gray-800 mb-1">{session.label}</h4>
-                  <p className="text-xs text-gray-600 mb-2">Guided breathing</p>
-                  <p className="text-xs text-green-600 font-medium">+{session.xp} XP</p>
+                  <h4 className="font-semibold text-gray-800 dark:text-dark-text mb-1">{session.label}</h4>
+                  <p className="text-xs text-gray-600 dark:text-dark-text-secondary mb-2">Guided breathing</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">+{session.xp} XP</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Tips */}
-          <div className="card">
-            <h3 className="font-semibold text-gray-800 mb-4">🌸 Breathing Tips</h3>
+          <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-dark-border shadow-lg">
+            <h3 className="font-semibold text-gray-800 dark:text-dark-text mb-4">🌸 Breathing Tips</h3>
             <div className="space-y-2">
               {breathingTips.map((tip, index) => (
-                <div key={index} className="text-sm text-gray-600 leading-relaxed">
+                <div key={index} className="text-sm text-gray-600 dark:text-dark-text-secondary leading-relaxed">
                   • {tip}
                 </div>
               ))}
@@ -238,9 +243,11 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
   if (sessionState === 'completed') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-24 transition-colors duration-300">
         {/* Header */}
-        <div className="gradient-bg px-6 pt-12 pb-6 rounded-b-5xl">
+        <div className="px-6 pt-12 pb-6 rounded-b-5xl" style={{
+          background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+        }}>
           <div className="flex items-center justify-between mb-4">
             <button 
               onClick={() => onNavigate('home')}
@@ -255,37 +262,37 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
         <div className="px-6 -mt-4">
           {/* Completion Card */}
-          <div className="card mb-6 text-center">
+          <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-dark-border shadow-lg mb-6 text-center">
             <div className="text-6xl mb-4">🎉</div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Well Done!</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-dark-text mb-2">Well Done!</h3>
+            <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
               You completed a {selectedSession?.label.toLowerCase()} breathing session
             </p>
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
-              <div className="text-green-600 font-semibold">
+            <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700/50 rounded-2xl p-4 mb-4">
+              <div className="text-green-600 dark:text-green-400 font-semibold">
                 +{selectedSession?.xp} XP Earned
               </div>
-              <div className="text-sm text-green-600 mt-1">
+              <div className="text-sm text-green-600 dark:text-green-400 mt-1">
                 Total breaths: ~{Math.floor((selectedSession?.duration || 1) * 7.5)}
               </div>
             </div>
           </div>
 
           {/* Session Summary */}
-          <div className="card mb-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Session Summary</h3>
+          <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-dark-border shadow-lg mb-6">
+            <h3 className="font-semibold text-gray-800 dark:text-dark-text mb-4">Session Summary</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Duration</span>
-                <span className="font-medium">{selectedSession?.label}</span>
+                <span className="text-gray-600 dark:text-dark-text-secondary">Duration</span>
+                <span className="font-medium text-gray-900 dark:text-dark-text">{selectedSession?.label}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">XP Earned</span>
-                <span className="font-medium text-green-600">+{selectedSession?.xp}</span>
+                <span className="text-gray-600 dark:text-dark-text-secondary">XP Earned</span>
+                <span className="font-medium text-green-600 dark:text-green-400">+{selectedSession?.xp}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Breath Cycles</span>
-                <span className="font-medium">{Math.floor(breathCycle / 2)}</span>
+                <span className="text-gray-600 dark:text-dark-text-secondary">Breath Cycles</span>
+                <span className="font-medium text-gray-900 dark:text-dark-text">{Math.floor(breathCycle / 2)}</span>
               </div>
             </div>
           </div>
@@ -294,13 +301,16 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
           <div className="space-y-3">
             <button
               onClick={() => setSessionState('selection')}
-              className="btn-primary w-full"
+              className="w-full text-white font-semibold py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+              style={{
+                background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+              }}
             >
               Start Another Session
             </button>
             <button
               onClick={() => onNavigate('home')}
-              className="btn-secondary w-full"
+              className="w-full bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-text font-semibold py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-dark-card-hover transition-colors"
             >
               Back to Home
             </button>
@@ -312,9 +322,11 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
   // Active or Paused Session
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-24 transition-colors duration-300">
       {/* Header */}
-      <div className="gradient-bg px-6 pt-12 pb-6 rounded-b-5xl">
+      <div className="px-6 pt-12 pb-6 rounded-b-5xl" style={{
+        background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+      }}>
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={stopSession}
@@ -331,11 +343,11 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
       <div className="px-6 -mt-4">
         {/* Timer */}
-        <div className="card mb-6 text-center">
-          <div className="text-4xl font-bold text-gray-800 mb-2 font-mono">
+        <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-dark-border shadow-lg mb-6 text-center">
+          <div className="text-4xl font-bold text-gray-800 dark:text-dark-text mb-2 font-mono">
             {formatTime(timeRemaining)}
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
             {sessionState === 'paused' ? 'Session Paused' : 'Time Remaining'}
           </p>
         </div>
@@ -345,8 +357,8 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
         
         {sessionState === 'paused' && (
           <div className="text-center mb-8">
-            <div className="w-48 h-48 mx-auto rounded-full bg-gray-200 flex items-center justify-center">
-              <div className="text-gray-500">
+            <div className="w-48 h-48 mx-auto rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <div className="text-gray-500 dark:text-gray-400">
                 <div className="text-2xl mb-2">⏸️</div>
                 <div className="text-sm">Session Paused</div>
               </div>
@@ -355,11 +367,11 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
         )}
 
         {/* Instructions */}
-        <div className="card mb-6 text-center">
-          <h3 className="font-semibold text-gray-800 mb-3">
+        <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-dark-border shadow-lg mb-6 text-center">
+          <h3 className="font-semibold text-gray-800 dark:text-dark-text mb-3">
             {sessionState === 'active' ? 'Focus on Your Breath' : 'Session Paused'}
           </h3>
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-gray-600 dark:text-dark-text-secondary leading-relaxed">
             {sessionState === 'active' 
               ? isBreathingIn 
                 ? 'Inhale slowly and deeply, letting your belly expand'
@@ -374,21 +386,24 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
           {sessionState === 'active' ? (
             <button
               onClick={pauseSession}
-              className="btn-secondary flex-1"
+              className="flex-1 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-text font-semibold py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-dark-card-hover transition-colors"
             >
               ⏸️ Pause
             </button>
           ) : (
             <button
               onClick={resumeSession}
-              className="btn-primary flex-1"
+              className="flex-1 text-white font-semibold py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+              style={{
+                background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+              }}
             >
               ▶️ Resume
             </button>
           )}
           <button
             onClick={stopSession}
-            className="btn-secondary px-6"
+            className="px-6 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-text font-semibold py-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-dark-card-hover transition-colors"
           >
             ⏹️ Stop
           </button>
@@ -397,7 +412,7 @@ export default function EmotionalReleaseScreen({ onNavigate, user: _user }: Emot
 
       {/* Success Toast */}
       {showToast && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 toast-enter">
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 dark:bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 toast-enter">
           <div className="flex items-center space-x-2">
             <span>✨</span>
             <span className="font-medium">{toastMessage}</span>

@@ -1,6 +1,7 @@
 import type { Screen } from '../App'
 import { IoChevronBack } from 'react-icons/io5'
 import { useEffect, useMemo, useState } from 'react'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface StreaksScreenProps {
   onNavigate: (screen: Screen) => void
@@ -15,6 +16,7 @@ interface StreaksScreenProps {
 }
 
 export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
+  const { colors, isDark } = useTheme()
   // Local state from localStorage
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear())
@@ -99,8 +101,17 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
         <div
           key={day}
           className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            isToday ? 'bg-purple-500 text-white' : hasMeditation ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'text-gray-400'
+            isToday 
+              ? 'text-white' 
+              : hasMeditation 
+                ? isDark 
+                  ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50' 
+                  : 'bg-purple-100 text-purple-700 border border-purple-200'
+                : 'text-gray-400 dark:text-gray-600'
           }`}
+          style={isToday ? {
+            background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+          } : undefined}
         >
           {day}
         </div>
@@ -111,18 +122,18 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 relative pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg relative pb-20 transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <button
           onClick={() => onNavigate('home')}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-dark-card-hover rounded-full transition-colors"
         >
-          <IoChevronBack className="w-6 h-6 text-gray-700" />
+          <IoChevronBack className="w-6 h-6 text-gray-700 dark:text-dark-text" />
         </button>
         <div className="text-center">
-          <h1 className="text-lg font-semibold text-gray-900">{streak} Day Streak</h1>
-          <p className="text-sm text-gray-500">Keep building your momentum</p>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-dark-text">{streak} Day Streak</h1>
+          <p className="text-sm text-gray-500 dark:text-dark-text-secondary">Keep building your momentum</p>
         </div>
         <div className="w-10"></div>
       </div>
@@ -130,7 +141,10 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
       <div className="px-4 space-y-6">
         {/* Miracle Moment card */}
         <div 
-          className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+          className="rounded-2xl p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+          style={{
+            background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+          }}
           onClick={() => onNavigate('meditation')}
         >
           <div className="flex items-center gap-4">
@@ -146,30 +160,30 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
 
         {/* Stats cards */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm">
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center mb-3">
-                <span className="text-yellow-600 text-xl">📅</span>
+              <div className={`w-12 h-12 ${isDark ? 'bg-yellow-900/30' : 'bg-yellow-100'} rounded-2xl flex items-center justify-center mb-3`}>
+                <span className={`${isDark ? 'text-yellow-300' : 'text-yellow-600'} text-xl`}>📅</span>
               </div>
-              <div className="text-sm text-gray-600 mb-1">Days Meditated</div>
-              <div className="text-3xl font-bold text-gray-900">{totalDaysMeditated}</div>
+              <div className="text-sm text-gray-600 dark:text-dark-text-secondary mb-1">Days Meditated</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-dark-text">{totalDaysMeditated}</div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm">
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-pink-100 rounded-2xl flex items-center justify-center mb-3">
-                <span className="text-pink-600 text-xl">🛡️</span>
+              <div className={`w-12 h-12 ${isDark ? 'bg-pink-900/30' : 'bg-pink-100'} rounded-2xl flex items-center justify-center mb-3`}>
+                <span className={`${isDark ? 'text-pink-300' : 'text-pink-600'} text-xl`}>🛡️</span>
               </div>
-              <div className="text-sm text-gray-600 mb-1">Shields Used</div>
-              <div className="text-3xl font-bold text-gray-900">{shields}</div>
+              <div className="text-sm text-gray-600 dark:text-dark-text-secondary mb-1">Shields Used</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-dark-text">{shields}</div>
             </div>
           </div>
         </div>
 
         {/* Calendar */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-dark-border">
           <div className="flex items-center justify-between mb-4">
-            <button className="text-gray-400" onClick={() => {
+            <button className="text-gray-400 dark:text-dark-text-secondary" onClick={() => {
               const prev = new Date(currentYear, currentMonth - 1, 1)
               setSelectedMonth(prev.getMonth())
               setSelectedYear(prev.getFullYear())
@@ -178,8 +192,8 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h3 className="font-medium text-gray-900">{monthLabel}</h3>
-            <button className="text-gray-400" onClick={() => {
+            <h3 className="font-medium text-gray-900 dark:text-dark-text">{monthLabel}</h3>
+            <button className="text-gray-400 dark:text-dark-text-secondary" onClick={() => {
               const next = new Date(currentYear, currentMonth + 1, 1)
               setSelectedMonth(next.getMonth())
               setSelectedYear(next.getFullYear())
@@ -190,7 +204,7 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 text-center text-sm text-gray-500 mb-3">
+          <div className="grid grid-cols-7 gap-1 text-center text-sm text-gray-500 dark:text-dark-text-secondary mb-3">
             {['S','M','T','W','T','F','S'].map((day, index) => (
               <div key={index} className="py-2 font-medium">{day}</div>
             ))}
@@ -206,7 +220,14 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
           <button
             onClick={markTodayMeditated}
             disabled={dateSet.has(todayKey)}
-            className={`flex-1 py-3 rounded-2xl font-medium text-sm ${dateSet.has(todayKey) ? 'bg-gray-300 text-white cursor-not-allowed' : 'bg-purple-500 text-white hover:bg-purple-600'}`}
+            className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${
+              dateSet.has(todayKey) 
+                ? 'bg-gray-300 dark:bg-gray-700 text-white cursor-not-allowed' 
+                : 'text-white shadow-lg hover:shadow-xl'
+            }`}
+            style={!dateSet.has(todayKey) ? {
+              background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+            } : undefined}
           >
             {dateSet.has(todayKey) ? 'Today Logged' : 'Mark Today as Meditated'}
           </button>
@@ -225,7 +246,7 @@ export default function StreaksScreen({ onNavigate }: StreaksScreenProps) {
                 alert('You earned a shield! Use it on a tough day to protect your streak.')
               }
             }}
-            className="px-4 py-3 bg-white border border-purple-200 text-purple-700 rounded-2xl font-medium text-sm"
+            className="px-4 py-3 bg-white dark:bg-dark-card border border-purple-200 dark:border-purple-700/50 text-purple-700 dark:text-purple-300 rounded-2xl font-medium text-sm hover:bg-gray-50 dark:hover:bg-dark-card-hover transition-colors"
           >
             {shields > 0 ? `Shields: ${shields}` : 'Get Shield'}
           </button>

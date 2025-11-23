@@ -34,6 +34,11 @@ const QuickCalm = lazy(() => import('./components/exercises/QuickCalm'))
 const StretchAndFocus = lazy(() => import('./components/exercises/StretchAndFocus'))
 const MindBodySync = lazy(() => import('./components/exercises/MindBodySync'))
 const ReflectionJournal = lazy(() => import('./components/exercises/ReflectionJournal'))
+const StressBuster = lazy(() => import('./components/exercises/StressBuster'))
+const SleepStories = lazy(() => import('./components/exercises/SleepStories'))
+const AnxietySOS = lazy(() => import('./components/exercises/AnxietySOS'))
+const MoodBooster = lazy(() => import('./components/exercises/MoodBooster'))
+const SocialConfidence = lazy(() => import('./components/exercises/SocialConfidence'))
 const ExerciseLayout = lazy(() => import('./components/exercises/ExerciseLayout'))
 
 // Loading component for Suspense fallback
@@ -67,6 +72,11 @@ export type Screen =
   | 'exercise-stretch-focus'
   | 'exercise-mind-body-sync'
   | 'exercise-reflection-journal'
+  | 'exercise-stress-buster'
+  | 'exercise-sleep-stories'
+  | 'exercise-anxiety-sos'
+  | 'exercise-mood-booster'
+  | 'exercise-social-confidence'
   | 'midnightRelaxation'
   | 'midnightLaunderette'
   | 'vedicCalm'
@@ -144,7 +154,7 @@ const AppContent = () => {
       // If they've completed onboarding before, go to home
       // If not (shouldn't happen for existing users, but handle it), show onboarding
       if (hasCompletedOnboarding) {
-        setCurrentScreen('home')
+      setCurrentScreen('home')
       } else {
         // First time login (shouldn't normally happen, but handle gracefully)
         setCurrentScreen('userOnboarding')
@@ -221,6 +231,16 @@ const AppContent = () => {
             <ReflectionJournal onNavigate={navigateToScreen} />
           </ExerciseLayout>
         )
+      case 'exercise-stress-buster':
+        return <StressBuster onNavigate={navigateToScreen} />
+      case 'exercise-sleep-stories':
+        return <SleepStories onNavigate={navigateToScreen} />
+      case 'exercise-anxiety-sos':
+        return <AnxietySOS onNavigate={navigateToScreen} />
+      case 'exercise-mood-booster':
+        return <MoodBooster onNavigate={navigateToScreen} />
+      case 'exercise-social-confidence':
+        return <SocialConfidence onNavigate={navigateToScreen} />
       case 'vedicCalm':
         return <VedicCalmScreen onNavigate={navigateToScreen} />
       case 'wisdomGita':
@@ -239,9 +259,9 @@ const AppContent = () => {
   return (
     <div className="mobile-container min-h-screen overflow-auto">
       <ErrorBoundary>
-        <Suspense fallback={<LoadingScreen />}>
-          {renderScreen()}
-        </Suspense>
+      <Suspense fallback={<LoadingScreen />}>
+        {renderScreen()}
+      </Suspense>
       </ErrorBoundary>
       {showBottomNav && (
         <BottomNavigation 
@@ -258,9 +278,9 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <LanguageProvider>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -10,7 +10,7 @@ interface ThoughtAnalysisScreenProps {
 }
 
 export default function ThoughtAnalysisScreen({ onNavigate }: ThoughtAnalysisScreenProps) {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const { t } = useLanguage()
   const [thought, setThought] = useState('')
   const [analysis, setAnalysis] = useState<ThoughtAnalysis | null>(null)
@@ -42,22 +42,22 @@ export default function ThoughtAnalysisScreen({ onNavigate }: ThoughtAnalysisScr
     }
   }
 
-  const getDistortionColor = (type: string) => {
+  const getDistortionColor = (type: string, isDark: boolean) => {
     const colorMap: Record<string, string> = {
-      'catastrophizing': 'bg-red-100 text-red-800 border-red-200',
-      'all-or-nothing thinking': 'bg-orange-100 text-orange-800 border-orange-200',
-      'overgeneralization': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'mental filter': 'bg-purple-100 text-purple-800 border-purple-200',
-      'jumping to conclusions': 'bg-pink-100 text-pink-800 border-pink-200',
-      'magnification': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'emotional reasoning': 'bg-blue-100 text-blue-800 border-blue-200',
-      'should statements': 'bg-teal-100 text-teal-800 border-teal-200',
-      'labeling': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      'personalization': 'bg-rose-100 text-rose-800 border-rose-200',
-      'mind reading': 'bg-violet-100 text-violet-800 border-violet-200',
-      'fortune telling': 'bg-amber-100 text-amber-800 border-amber-200'
+      'catastrophizing': isDark ? 'bg-red-900/30 text-red-300 border-red-700/50' : 'bg-red-100 text-red-800 border-red-200',
+      'all-or-nothing thinking': isDark ? 'bg-orange-900/30 text-orange-300 border-orange-700/50' : 'bg-orange-100 text-orange-800 border-orange-200',
+      'overgeneralization': isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700/50' : 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'mental filter': isDark ? 'bg-purple-900/30 text-purple-300 border-purple-700/50' : 'bg-purple-100 text-purple-800 border-purple-200',
+      'jumping to conclusions': isDark ? 'bg-pink-900/30 text-pink-300 border-pink-700/50' : 'bg-pink-100 text-pink-800 border-pink-200',
+      'magnification': isDark ? 'bg-indigo-900/30 text-indigo-300 border-indigo-700/50' : 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      'emotional reasoning': isDark ? 'bg-blue-900/30 text-blue-300 border-blue-700/50' : 'bg-blue-100 text-blue-800 border-blue-200',
+      'should statements': isDark ? 'bg-teal-900/30 text-teal-300 border-teal-700/50' : 'bg-teal-100 text-teal-800 border-teal-200',
+      'labeling': isDark ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700/50' : 'bg-cyan-100 text-cyan-800 border-cyan-200',
+      'personalization': isDark ? 'bg-rose-900/30 text-rose-300 border-rose-700/50' : 'bg-rose-100 text-rose-800 border-rose-200',
+      'mind reading': isDark ? 'bg-violet-900/30 text-violet-300 border-violet-700/50' : 'bg-violet-100 text-violet-800 border-violet-200',
+      'fortune telling': isDark ? 'bg-amber-900/30 text-amber-300 border-amber-700/50' : 'bg-amber-100 text-amber-800 border-amber-200'
     }
-    return colorMap[type.toLowerCase()] || 'bg-gray-100 text-gray-800 border-gray-200'
+    return colorMap[type.toLowerCase()] || (isDark ? 'bg-gray-800/30 text-gray-300 border-gray-700/50' : 'bg-gray-100 text-gray-800 border-gray-200')
   }
 
   return (
@@ -142,7 +142,7 @@ export default function ThoughtAnalysisScreen({ onNavigate }: ThoughtAnalysisScr
                   {analysis.distortions.map((distortion, index) => (
                     <div
                       key={index}
-                      className={`p-3 rounded-xl border ${getDistortionColor(distortion.type)}`}
+                      className={`p-3 rounded-xl border ${getDistortionColor(distortion.type, isDark)}`}
                     >
                       <div className="flex items-start justify-between mb-1">
                         <span className="font-medium text-sm">{distortion.type}</span>

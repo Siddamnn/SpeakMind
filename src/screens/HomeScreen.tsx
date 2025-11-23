@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { IoSparkles, IoJournal, IoFitness, IoHeadset, IoAnalytics, IoFlame } from 'react-icons/io5'
 import type { Screen } from '../App'
 import { recommendVideos, type VideoSuggestion } from '../utils/youtubeAI'
@@ -66,13 +66,14 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
 
   // Windows 8-style tiles with beautiful cover images - Gallery layout with varied sizes
   // Organized to minimize gaps and create a compact layout
-  const tiles: Tile[] = [
+  // Memoized to prevent recreation on every render
+  const tiles: Tile[] = useMemo(() => [
     {
       id: 'thought-analysis',
       title: 'Thought Analysis',
       subtitle: 'AI-Powered CBT',
       icon: <IoSparkles className="w-6 h-6" />,
-      image: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/Thought Analysis.webp',
       size: 'large',
       color: 'from-purple-500 to-pink-500',
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
@@ -83,7 +84,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       title: 'Meditation',
       subtitle: `${user.meditations} sessions`,
       icon: <IoFitness className="w-6 h-6" />,
-      image: 'https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/meditation.webp',
       size: 'tall',
       color: 'from-blue-500 to-cyan-500',
       gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
@@ -94,7 +95,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       title: 'Journal',
       subtitle: 'Reflect & Grow',
       icon: <IoJournal className="w-6 h-6" />,
-      image: 'https://images.pexels.com/photos/159711/books-bookstore-book-reading-159711.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/Journal.webp',
       size: 'small',
       color: 'from-orange-500 to-red-500',
       gradient: 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)',
@@ -105,7 +106,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       title: 'AI Coach',
       subtitle: 'Ask Anything',
       icon: <IoHeadset className="w-6 h-6" />,
-      image: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/AI Coach.webp',
       size: 'tall', // Changed from medium to tall for better alignment
       color: 'from-green-500 to-emerald-500',
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
@@ -115,7 +116,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       id: 'vedic-calm',
       title: 'Vedic Calm',
       subtitle: 'Philosophy & Wisdom',
-      image: 'https://images.pexels.com/photos/15327651/pexels-photo-15327651.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/Vedic Calm.webp',
       size: 'wide',
       color: 'from-amber-500 to-yellow-500',
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #eab308 100%)',
@@ -126,7 +127,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       title: 'Profile',
       subtitle: 'Level ' + user.level,
       icon: <IoAnalytics className="w-6 h-6" />,
-      image: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/Profile.webp',
       size: 'small',
       color: 'from-indigo-500 to-purple-500',
       gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
@@ -136,7 +137,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       id: 'eeg-brain',
       title: 'EEG Brain Health',
       subtitle: 'Track & Improve',
-      image: 'https://images.pexels.com/photos/3184436/pexels-photo-3184436.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/EEG Brain Health.webp',
       size: 'small',
       color: 'from-teal-500 to-cyan-500',
       gradient: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
@@ -146,26 +147,39 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       id: 'midnight-relax',
       title: 'Midnight Relaxation',
       subtitle: 'Sleep & Calm',
-      image: 'https://images.pexels.com/photos/18554368/pexels-photo-18554368.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/Midnight Relaxation.webp',
       size: 'medium',
       color: 'from-violet-500 to-purple-500',
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
       onClick: () => onNavigate('midnightRelaxation')
     },
     {
+      id: 'midnight-launderette',
+      title: 'Midnight Launderette',
+      subtitle: 'Ambient Sounds',
+      image: '/homepagetile-coverimages/Midnight Launderette.webp',
+      size: 'medium',
+      color: 'from-slate-500 to-gray-500',
+      gradient: 'linear-gradient(135deg, #64748b 0%, #6b7280 100%)',
+      onClick: () => onNavigate('midnightLaunderette')
+    },
+    {
       id: 'wisdom-gita',
       title: 'Wisdom Gita',
       subtitle: 'Ancient Insights',
-      image: 'https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/homepagetile-coverimages/Wisdom Gita.webp',
       size: 'medium',
       color: 'from-rose-500 to-pink-500',
       gradient: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
       onClick: () => onNavigate('wisdomGita')
     }
-  ]
+  ], [user.meditations, user.level, onNavigate])
 
   // Add YouTube video tile if videos are available - will appear at the end (bottom of grid)
-  const videoTile: Tile | null = !isLoadingVideos && videoSuggestions.length > 0 ? {
+  // Memoized to prevent recreation on every render
+  const videoTile: Tile | null = useMemo(() => {
+    if (isLoadingVideos || videoSuggestions.length === 0) return null
+    return {
     id: 'youtube-videos',
     title: videoSourceContext === 'context' 
       ? '✨ Personalized Videos'
@@ -177,12 +191,13 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
     size: 'wide',
     color: 'from-red-500 to-pink-500',
     gradient: 'linear-gradient(135deg, #ef4444 0%, #ec4899 100%)',
-    onClick: () => {
-      if (videoSuggestions[currentVideoIndex]?.url) {
-        window.open(videoSuggestions[currentVideoIndex].url, '_blank')
+      onClick: () => {
+        if (videoSuggestions[currentVideoIndex]?.url) {
+          window.open(videoSuggestions[currentVideoIndex].url, '_blank')
+        }
       }
     }
-  } : null
+  }, [isLoadingVideos, videoSuggestions, currentVideoIndex, videoSourceContext, selectedMood])
 
   // Note: YouTube video tile is rendered separately after regular tiles to appear at bottom
 
@@ -238,7 +253,8 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
     { emoji: anxiousImg, label: t('home.anxious'), value: 'anxious' },
   ]
 
-  const getTileSizeClasses = (size: string) => {
+  // Memoized function to get tile size classes
+  const getTileSizeClasses = useCallback((size: string) => {
     switch (size) {
       case 'small':
         return 'col-span-1 row-span-1' // 1x1 - smallest
@@ -255,7 +271,20 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       default:
         return 'col-span-1 row-span-1'
     }
-  }
+  }, [])
+  
+  // Memoized hover handlers to prevent recreation on every render
+  const handleTileMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const element = e.currentTarget
+    element.style.boxShadow = `0 0 20px ${colors.primary}80, 0 0 40px ${colors.primary}40, 0 0 60px ${colors.primary}20`
+    element.style.borderColor = colors.primary
+  }, [colors.primary])
+  
+  const handleTileMouseLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const element = e.currentTarget
+    element.style.boxShadow = ''
+    element.style.borderColor = 'transparent'
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-blue-50/30 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-20 transition-colors duration-300">
@@ -306,9 +335,9 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
           </div>
         </button>
 
-        {/* Mood Selector - Single Rectangle Container with Circular Frames */}
-        <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-dark-card p-3">
-          <div className="grid grid-cols-4 gap-3">
+        {/* Mood Selector - Single Rectangle Container with Circular Frames - Full width to match tiles */}
+        <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-dark-card p-4">
+          <div className="grid grid-cols-4 gap-4">
             {moods.map((mood) => (
               <button
                 key={mood.value}
@@ -398,6 +427,12 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
               key={tile.id}
               onClick={tile.onClick}
               className={`${getTileSizeClasses(tile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]`}
+              style={{
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease'
+              } as React.CSSProperties}
+              onMouseEnter={handleTileMouseEnter}
+              onMouseLeave={handleTileMouseLeave}
             >
               {/* Background Image */}
               <div className="absolute inset-0">
@@ -407,12 +442,12 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   loading="lazy"
                 />
-                {/* Gradient Overlay - Reduced to show 25% more image visibility */}
+                {/* Gradient Overlay - Reduced by 20% (from 0.30 to 0.24) */}
                 <div 
-                  className={`absolute inset-0 bg-gradient-to-br ${tile.color} opacity-30 group-hover:opacity-40 transition-opacity`}
+                  className={`absolute inset-0 bg-gradient-to-br ${tile.color} opacity-24 group-hover:opacity-32 transition-opacity`}
                   style={tile.gradient ? {
                     background: tile.gradient,
-                    opacity: 0.30
+                    opacity: 0.24
                   } : undefined}
                 />
                 {/* Dark Overlay for Text Readability - Increased darkness for better text visibility */}
@@ -437,10 +472,10 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                   )}
                 </div>
                 
-                {/* Play/Arrow Indicator */}
-                <div className="self-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                {/* Play/Arrow Indicator - Positioned absolutely to prevent cropping */}
+                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
@@ -460,6 +495,12 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
               key={videoTile.id}
               onClick={videoTile.onClick}
               className={`${getTileSizeClasses(videoTile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]`}
+              style={{
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease'
+              } as React.CSSProperties}
+              onMouseEnter={handleTileMouseEnter}
+              onMouseLeave={handleTileMouseLeave}
             >
               {/* Background Image */}
               <div className="absolute inset-0">
@@ -469,12 +510,12 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   loading="lazy"
                 />
-                {/* Gradient Overlay */}
+                {/* Gradient Overlay - Reduced by 20% (from 0.30 to 0.24) */}
                 <div 
-                  className={`absolute inset-0 bg-gradient-to-br ${videoTile.color} opacity-30 group-hover:opacity-40 transition-opacity`}
+                  className={`absolute inset-0 bg-gradient-to-br ${videoTile.color} opacity-24 group-hover:opacity-32 transition-opacity`}
                   style={videoTile.gradient ? {
                     background: videoTile.gradient,
-                    opacity: 0.30
+                    opacity: 0.24
                   } : undefined}
                 />
                 {/* Dark Overlay for Text Readability */}
@@ -494,10 +535,10 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                   )}
                 </div>
                 
-                {/* YouTube Play Button */}
-                <div className="self-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-8 h-8 bg-red-600/80 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                {/* YouTube Play Button - Positioned absolutely to prevent cropping */}
+                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-7 h-7 bg-red-600/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>

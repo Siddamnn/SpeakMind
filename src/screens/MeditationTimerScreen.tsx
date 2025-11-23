@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import type { Screen } from '../App'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface MeditationTimerScreenProps {
   onNavigate: (screen: Screen) => void
 }
 
 export default function MeditationTimerScreen({ onNavigate }: MeditationTimerScreenProps) {
+  const { colors, isDark } = useTheme()
   const [selectedTime, setSelectedTime] = useState(10) // minutes
   const [isActive, setIsActive] = useState(false)
   const [timeLeft, setTimeLeft] = useState(selectedTime * 60) // seconds
@@ -61,7 +63,9 @@ export default function MeditationTimerScreen({ onNavigate }: MeditationTimerScr
 
   if (isCompleted) {
     return (
-      <div className="min-h-screen gradient-bg flex flex-col items-center justify-center px-6 text-white">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-white" style={{
+        background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+      }}>
         <div className="text-center">
           <div className="text-8xl mb-6">✨</div>
           <h1 className="text-3xl font-bold mb-4">Well Done!</h1>
@@ -72,7 +76,8 @@ export default function MeditationTimerScreen({ onNavigate }: MeditationTimerScr
           <div className="space-y-4">
             <button
               onClick={() => onNavigate('home')}
-              className="w-full bg-white text-primary-purple font-semibold py-4 px-8 rounded-4xl transition-all duration-300 active:scale-95"
+              className="w-full bg-white font-semibold py-4 px-8 rounded-4xl transition-all duration-300 active:scale-95"
+              style={{ color: colors.primary }}
             >
               Back to Home
             </button>
@@ -90,7 +95,9 @@ export default function MeditationTimerScreen({ onNavigate }: MeditationTimerScr
   }
 
   return (
-    <div className="min-h-screen gradient-bg flex flex-col px-6 text-white">
+    <div className="min-h-screen flex flex-col px-6 text-white" style={{
+      background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+    }}>
       {/* Header */}
       <div className="flex items-center justify-between pt-12 pb-8">
         <button 
@@ -151,9 +158,10 @@ export default function MeditationTimerScreen({ onNavigate }: MeditationTimerScr
                   onClick={() => setSelectedTime(time)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     selectedTime === time
-                      ? 'bg-white text-primary-purple'
+                      ? 'bg-white border border-white/30'
                       : 'bg-white/20 text-white border border-white/30'
                   }`}
+                  style={selectedTime === time ? { color: colors.primary } : undefined}
                 >
                   {time}m
                 </button>
@@ -167,7 +175,8 @@ export default function MeditationTimerScreen({ onNavigate }: MeditationTimerScr
           {!isActive ? (
             <button
               onClick={handleStart}
-              className="bg-white text-primary-purple font-semibold py-4 px-8 rounded-4xl shadow-button transition-all duration-300 active:scale-95"
+              className="bg-white font-semibold py-4 px-8 rounded-4xl shadow-button transition-all duration-300 active:scale-95"
+              style={{ color: colors.primary }}
             >
               {timeLeft === selectedTime * 60 ? "Let's Go" : 'Resume'}
             </button>
