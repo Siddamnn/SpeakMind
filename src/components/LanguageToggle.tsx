@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useLanguage, SUPPORTED_LANGUAGES, type Language } from '../contexts/LanguageContext'
 
-export default function LanguageToggle() {
+const LanguageToggle = () => {
   const { language, setLanguage, currentLanguage } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -58,11 +58,10 @@ export default function LanguageToggle() {
               <button
                 key={lang.code}
                 onClick={() => handleLanguageSelect(lang)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  language === lang.code
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${language === lang.code
                     ? 'bg-purple-50 text-purple-700 border border-purple-200'
                     : 'hover:bg-gray-50 text-gray-700'
-                }`}
+                  }`}
               >
                 <span className="text-2xl">{lang.flag}</span>
                 <div className="flex-1 text-left">
@@ -93,3 +92,5 @@ export default function LanguageToggle() {
   )
 }
 
+// Wrap with React.memo to prevent unnecessary re-renders  
+export default React.memo(LanguageToggle)

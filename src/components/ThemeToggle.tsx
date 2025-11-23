@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useTheme, type ThemeMode, type ColorTheme, COLOR_SCHEMES } from '../contexts/ThemeContext'
 import { HiSun, HiMoon, HiColorSwatch } from 'react-icons/hi'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export default function ThemeToggle() {
-  const { theme, setThemeMode, setColorTheme, toggleTheme, isDark, colors } = useTheme()
+const ThemeToggle = () => {
+  const { theme, setThemeMode, setColorTheme, isDark, colors } = useTheme()
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showModePicker, setShowModePicker] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -78,11 +78,10 @@ export default function ThemeToggle() {
                             window.dispatchEvent(new Event('themechange'))
                           }, 100)
                         }}
-                        className={`relative p-3 rounded-xl transition-all duration-200 ${
-                          isActive
-                            ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-dark-bg ring-current scale-105'
-                            : 'hover:scale-105'
-                        }`}
+                        className={`relative p-3 rounded-xl transition-all duration-200 ${isActive
+                          ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-dark-bg ring-current scale-105'
+                          : 'hover:scale-105'
+                          }`}
                         style={{
                           background: `linear-gradient(135deg, ${scheme.gradientFrom} 0%, ${scheme.gradientTo} 100%)`,
                           color: 'white'
@@ -148,11 +147,10 @@ export default function ThemeToggle() {
                         setThemeMode(mode.value)
                         setShowModePicker(false)
                       }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                        isActive
-                          ? 'text-white'
-                          : 'hover:bg-gray-100 dark:hover:bg-dark-card-hover text-gray-700 dark:text-dark-text'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${isActive
+                        ? 'text-white'
+                        : 'hover:bg-gray-100 dark:hover:bg-dark-card-hover text-gray-700 dark:text-dark-text'
+                        }`}
                       style={isActive ? {
                         background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
                       } : undefined}
@@ -174,3 +172,5 @@ export default function ThemeToggle() {
   )
 }
 
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(ThemeToggle)

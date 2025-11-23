@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "analyze": "vite-bundle-visualizer",
     "dev": "vite",
     "build": "npm install --include=dev && tsc --noEmit && vite build",
     "lint": "eslint .",
@@ -39,6 +40,7 @@
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
-    "vite": "^5.0.12"
+    "vite": "^5.0.12",
+    "vite-bundle-visualizer": "^1.2.1"
   }
 }

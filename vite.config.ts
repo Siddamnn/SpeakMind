@@ -28,53 +28,107 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     minify: 'esbuild',
+    // Target modern browsers for smaller bundle
+    target: 'es2020',
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
-        manualChunks: {
-          // Vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'icons-vendor': ['react-icons', 'lucide-react'],
-          // Screens chunked by feature
-          'auth-screens': [
-            './src/screens/AuthScreen.tsx',
-            './src/screens/UserOnboardingScreen.tsx',
-          ],
-          'home-screens': [
-            './src/screens/HomeScreen.tsx',
-            './src/screens/ProfileScreen.tsx',
-          ],
-          'meditation-screens': [
-            './src/screens/MeditationScreen.tsx',
-            './src/screens/MeditationTimerScreen.tsx',
-            './src/screens/EmotionalReleaseScreen.tsx',
-          ],
-          'ai-screens': [
-            './src/screens/AICoachScreen.tsx',
-            './src/screens/ConversationScreen.tsx',
-            './src/screens/AskQuestionScreen.tsx',
-            './src/screens/MindCoachScreen.tsx',
-          ],
-          'content-screens': [
-            './src/screens/VedicCalmScreen.tsx',
-            './src/screens/WisdomGitaScreen.tsx',
-            './src/screens/MidnightRelaxationScreen.tsx',
-            './src/screens/MidnightLaunderetteScreen.tsx',
-          ],
-          'exercise-components': [
-            './src/components/exercises/QuickCalm.tsx',
-            './src/components/exercises/StretchAndFocus.tsx',
-            './src/components/exercises/MindBodySync.tsx',
-            './src/components/exercises/ReflectionJournal.tsx',
-          ],
+        // Optimized manual chunks for better caching and initial load
+        manualChunks: (id) => {
+          // Core React framework - changes infrequently
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'react-core'
+          }
+
+          // Firebase bundle - large and changes infrequently
+          if (id.includes('node_modules/firebase/') || id.includes('node_modules/@firebase/')) {
+            return 'firebase-vendor'
+          }
+
+          // Framer Motion - animation library, separate for optional loading
+          if (id.includes('node_modules/framer-motion/')) {
+            return 'framer-vendor'
+          }
+
+          // Icons - changes infrequently, cache separately
+          if (id.includes('node_modules/react-icons/') || id.includes('node_modules/lucide-react/')) {
+            return 'icons-vendor'
+          }
+
+          // Google AI SDK
+          if (id.includes('node_modules/@google/generative-ai/')) {
+            return 'google-ai-vendor'
+          }
+
+          // Other vendor dependencies
+          if (id.includes('node_modules/')) {
+            return 'vendor-misc'
+          }
+
+          // Group screens by usage frequency for optimal loading
+
+          // Core screens - loaded on initial app load
+          if (id.includes('/screens/AuthScreen') ||
+            id.includes('/screens/HomeScreen') ||
+            id.includes('/screens/UserOnboardingScreen')) {
+            return 'screens-core'
+          }
+
+          // Meditation features - frequently used together
+          if (id.includes('/screens/MeditationScreen') ||
+            id.includes('/screens/MeditationTimerScreen') ||
+            id.includes('/screens/EmotionalReleaseScreen') ||
+            id.includes('/screens/JournalScreen')) {
+            return 'screens-meditation'
+          }
+
+          // AI features - used together, can be lazy loaded
+          if (id.includes('/screens/AICoachScreen') ||
+            id.includes('/screens/MindCoachScreen') ||
+            id.includes('/screens/ConversationScreen') ||
+            id.includes('/screens/AskQuestionScreen') ||
+            id.includes('/screens/VoiceSessionScreen')) {
+            return 'screens-ai'
+          }
+
+          // Content/exploration screens - less frequently accessed
+          if (id.includes('/screens/VedicCalmScreen') ||
+            id.includes('/screens/WisdomGitaScreen') ||
+            id.includes('/screens/MidnightRelaxationScreen') ||
+            id.includes('/screens/MidnightLaunderetteScreen') ||
+            id.includes('/screens/ExploreScreen')) {
+            return 'screens-content'
+          }
+
+          // Social/utility screens
+          if (id.includes('/screens/SharingScreen') ||
+            id.includes('/screens/ProfileScreen') ||
+            id.includes('/screens/StreaksScreen') ||
+            id.includes('/screens/EEGBrainHealthScreen')) {
+            return 'screens-social'
+          }
+
+          // Exercise components - loaded on demand
+          if (id.includes('/components/exercises/')) {
+            return 'exercise-components'
+          }
+
+          // Context providers - needed early, separate chunk
+          if (id.includes('/contexts/')) {
+            return 'contexts'
+          }
+
+          // Shared components - needed across screens
+          if (id.includes('/components/') && !id.includes('/exercises/')) {
+            return 'components-shared'
+          }
         },
       },
     },
-    // Chunk size warning limit
-    chunkSizeWarningLimit: 600,
+    // Increase chunk size warning limit since we're optimizing splitting
+    chunkSizeWarningLimit: 800,
   },
   server: {
     port: 3000,

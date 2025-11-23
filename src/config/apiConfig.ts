@@ -10,6 +10,8 @@
  *          Only use for local development/testing
  */
 
+import Logger from '../utils/Logger'
+
 // Automatically detect environment
 const isProduction = import.meta.env.PROD
 const isVercel = import.meta.env.VITE_VERCEL === '1'
@@ -18,6 +20,6 @@ export const USE_SERVERLESS = isProduction || isVercel
 
 // Log configuration on load (development only)
 if (import.meta.env.DEV) {
-  console.log('[API Config] Environment:', import.meta.env.MODE)
-  console.log('[API Config] Using serverless:', USE_SERVERLESS)
+  Logger.info('[API Config] Environment:', import.meta.env.MODE)
+  Logger.info('[API Config] Using serverless:', USE_SERVERLESS)
 }

@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from 'firebase/firestore'
+import Logger from '../utils/Logger'
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -59,7 +60,7 @@ if (typeof window !== 'undefined') {
 if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
   connectAuthEmulator(auth, 'http://localhost:9099')
   connectFirestoreEmulator(db, 'localhost', 8080)
-  console.log('[Firebase] Connected to emulators')
+  Logger.info('[Firebase] Connected to emulators')
 }
 
 export default app

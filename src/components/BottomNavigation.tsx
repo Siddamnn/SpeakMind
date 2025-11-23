@@ -1,3 +1,4 @@
+import React from 'react'
 import type { Screen } from '../App'
 import { AiOutlineHome } from 'react-icons/ai'
 import { PiFlowerLotusLight, PiHandsPrayingLight } from 'react-icons/pi'
@@ -14,7 +15,7 @@ interface BottomNavigationProps {
   onNavigate: (screen: Screen) => void
 }
 
-export default function BottomNavigation({ currentScreen, onNavigate }: BottomNavigationProps) {
+const BottomNavigation = ({ currentScreen, onNavigate }: BottomNavigationProps) => {
   const { t } = useLanguage()
   const { colors } = useTheme()
   const [isHovered, setIsHovered] = useState(false)
@@ -107,7 +108,7 @@ export default function BottomNavigation({ currentScreen, onNavigate }: BottomNa
                   transition={{ duration: 0.2 }}
                   className="flex items-center justify-center w-full h-full"
                 >
-                  <activeItem.icon 
+                  <activeItem.icon
                     className="text-2xl"
                     style={{ color: colors.primary }}
                   />
@@ -152,3 +153,6 @@ export default function BottomNavigation({ currentScreen, onNavigate }: BottomNa
     </>
   )
 }
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(BottomNavigation)

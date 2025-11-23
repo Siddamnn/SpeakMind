@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
+import type { ReactNode } from 'react'
 
-export type LanguageCode = 
+export type LanguageCode =
   | 'en'  // English
   | 'hi'  // Hindi
   | 'bn'  // Bengali
@@ -51,12 +52,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [language, setLanguageState] = useState<LanguageCode>(() => {
     // Load from localStorage or default to English
     const saved = localStorage.getItem('speakmind_language')
-    return (saved && SUPPORTED_LANGUAGES.some(l => l.code === saved)) 
-      ? (saved as LanguageCode) 
+    return (saved && SUPPORTED_LANGUAGES.some(l => l.code === saved))
+      ? (saved as LanguageCode)
       : 'en'
   })
-  
-  const [translations, setTranslations] = useState<Record<string, string>>({})
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [translations, setTranslations] = useState<any>({})
   const [isLoading, setIsLoading] = useState(true)
 
   // Pre-import all translation files for better reliability
@@ -111,51 +113,65 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     loadTranslations()
   }, [language])
 
-  const setLanguage = (lang: LanguageCode) => {
+  // Memoize setLanguage to prevent re-creating function on every render
+  const setLanguage = useCallback((lang: LanguageCode) => {
     setLanguageState(lang)
     localStorage.setItem('speakmind_language', lang)
-  }
+  }, [])
 
-  const t = (key: string, params?: Record<string, string | number>): string => {
+  // Memoize translation function to prevent re-creating on every render
+  const t = useCallback((key: string, params?: Record<string, string | number>): string => {
     // Handle nested keys like "home.hi" -> translations.home.hi
     const keys = key.split('.')
     let translation: any = translations
-    
+
     // Navigate through nested object
     for (const k of keys) {
       if (translation && typeof translation === 'object' && k in translation) {
         translation = translation[k]
       } else {
         // Key not found, log for debugging and return the key itself
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           console.warn(`Translation key not found: ${key}`, { translations, currentKey: k })
         }
         return key
       }
     }
-    
+
     // If translation is not a string, return the key
     if (typeof translation !== 'string') {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         console.warn(`Translation value is not a string for key: ${key}`, translation)
       }
       return key
     }
-    
+
     // Replace parameters in translation
     if (params) {
       Object.entries(params).forEach(([paramKey, value]) => {
         translation = translation.replace(new RegExp(`{{${paramKey}}}`, 'g'), String(value))
       })
     }
-    
-    return translation
-  }
 
-  const currentLanguage = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0]
+    return translation
+  }, [translations])
+
+  // Memoize current language lookup
+  const currentLanguage = useMemo(
+    () => SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0],
+    [language]
+  )
+
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    language,
+    setLanguage,
+    t,
+    currentLanguage
+  }), [language, setLanguage, t, currentLanguage])
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, currentLanguage }}>
+    <LanguageContext.Provider value={value}>
       {!isLoading && children}
     </LanguageContext.Provider>
   )

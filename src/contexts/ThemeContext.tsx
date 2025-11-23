@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
+import type { ReactNode } from 'react'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
-export type ColorTheme = 
+export type ColorTheme =
   | 'purple'  // Calm & Serene (default)
   | 'blue'    // Ocean & Tranquility
   | 'green'   // Nature & Growth
@@ -155,11 +156,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     const root = document.documentElement
     const isDark = effectiveMode === 'dark'
-    
+
     // Set data attributes for theme
     root.setAttribute('data-theme', colorTheme)
     root.setAttribute('data-mode', effectiveMode)
-    
+
     // Apply dark mode class
     if (isDark) {
       root.classList.add('dark')
@@ -174,7 +175,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     root.style.setProperty('--theme-accent', colors.accent)
     root.style.setProperty('--theme-gradient-from', colors.gradientFrom)
     root.style.setProperty('--theme-gradient-to', colors.gradientTo)
-    
+
     // Convert hex to RGB for opacity support
     const hexToRgb = (hex: string) => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -183,41 +184,48 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     root.style.setProperty('--theme-primary-rgb', hexToRgb(colors.primary))
   }, [colorTheme, effectiveMode])
 
-  const setThemeMode = (mode: ThemeMode) => {
+  // Memoize setThemeMode to prevent unnecessary re-renders
+  const setThemeMode = useCallback((mode: ThemeMode) => {
     setThemeModeState(mode)
     localStorage.setItem('speakmind_theme_mode', mode)
-  }
+  }, [])
 
-  const setColorTheme = (color: ColorTheme) => {
+  // Memoize setColorTheme to prevent unnecessary re-renders
+  const setColorTheme = useCallback((color: ColorTheme) => {
     setColorThemeState(color)
     localStorage.setItem('speakmind_color_theme', color)
-  }
+  }, [])
 
-  const toggleTheme = () => {
+  // Memoize toggleTheme to prevent unnecessary re-renders
+  const toggleTheme = useCallback(() => {
     const newMode = effectiveMode === 'light' ? 'dark' : 'light'
-    setThemeMode(newMode)
-  }
+    setThemeModeState(newMode)
+    localStorage.setItem('speakmind_theme_mode', newMode)
+  }, [effectiveMode])
 
-  const theme: Theme = {
+  // Memoize theme object
+  const theme: Theme = useMemo(() => ({
     mode: themeMode,
     colorTheme,
     effectiveMode
-  }
+  }), [themeMode, colorTheme, effectiveMode])
 
-  const colors = COLOR_SCHEMES[colorTheme]
+  // Memoize colors
+  const colors = useMemo(() => COLOR_SCHEMES[colorTheme], [colorTheme])
   const isDark = effectiveMode === 'dark'
 
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    theme,
+    setThemeMode,
+    setColorTheme,
+    toggleTheme,
+    isDark,
+    colors
+  }), [theme, setThemeMode, setColorTheme, toggleTheme, isDark, colors])
+
   return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        setThemeMode,
-        setColorTheme,
-        toggleTheme,
-        isDark,
-        colors
-      }}
-    >
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   )

@@ -2,6 +2,10 @@
  * Firestore Service
  * Centralized service for all Firestore operations
  * Replaces localStorage with cloud-based storage
+ * 
+ * Performance Note: This service includes automatic caching via Firestore's
+ * built-in offline persistence (see firebase.ts). For frequently accessed data,
+ * consider implementing an in-memory cache layer using React Query or similar.
  */
 
 import {
@@ -20,6 +24,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import Logger from '../utils/Logger'
 
 // Types
 export interface UserProfile {
@@ -82,7 +87,7 @@ export const createUserProfile = async (
       updatedAt: serverTimestamp()
     })
   } catch (error) {
-    console.error('Error creating user profile:', error)
+    Logger.error('Error creating user profile:', error)
     throw error
   }
 }
@@ -91,13 +96,13 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   try {
     const userRef = doc(db, 'users', uid)
     const userSnap = await getDoc(userRef)
-    
+
     if (userSnap.exists()) {
       return userSnap.data() as UserProfile
     }
     return null
   } catch (error) {
-    console.error('Error getting user profile:', error)
+    Logger.error('Error getting user profile:', error)
     throw error
   }
 }
@@ -125,18 +130,18 @@ export const saveMeditationSession = async (
   try {
     const sessionsRef = collection(db, 'meditationSessions')
     const newSessionRef = doc(sessionsRef)
-    
+
     await setDoc(newSessionRef, {
       ...session,
       completedAt: serverTimestamp()
     })
-    
+
     // Update user stats
     await updateUserStatsAfterSession(session.userId, session.duration)
-    
+
     return newSessionRef.id
   } catch (error) {
-    console.error('Error saving meditation session:', error)
+    Logger.error('Error saving meditation session:', error)
     throw error
   }
 }
@@ -153,7 +158,7 @@ export const getUserMeditationSessions = async (
       orderBy('completedAt', 'desc'),
       limit(limitCount)
     )
-    
+
     const querySnapshot = await getDocs(q)
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -172,16 +177,16 @@ export const saveJournalEntry = async (
   try {
     const journalRef = collection(db, 'journalEntries')
     const newEntryRef = doc(journalRef)
-    
+
     await setDoc(newEntryRef, {
       ...entry,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     })
-    
+
     return newEntryRef.id
   } catch (error) {
-    console.error('Error saving journal entry:', error)
+    Logger.error('Error saving journal entry:', error)
     throw error
   }
 }
@@ -198,7 +203,7 @@ export const getUserJournalEntries = async (
       orderBy('createdAt', 'desc'),
       limit(limitCount)
     )
-    
+
     const querySnapshot = await getDocs(q)
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -241,11 +246,11 @@ export const getUserStats = async (userId: string): Promise<UserStats | null> =>
   try {
     const statsRef = doc(db, 'userStats', userId)
     const statsSnap = await getDoc(statsRef)
-    
+
     if (statsSnap.exists()) {
       return statsSnap.data() as UserStats
     }
-    
+
     // Create initial stats if they don't exist
     const initialStats: UserStats = {
       userId,
@@ -260,7 +265,7 @@ export const getUserStats = async (userId: string): Promise<UserStats | null> =>
       points: 0,
       updatedAt: Timestamp.now()
     }
-    
+
     await setDoc(statsRef, initialStats)
     return initialStats
   } catch (error) {
@@ -276,37 +281,37 @@ const updateUserStatsAfterSession = async (
   try {
     const stats = await getUserStats(userId)
     if (!stats) return
-    
+
     const today = new Date().toISOString().split('T')[0]
     const meditatedDates = stats.meditatedDates || []
-    
+
     // Add today's date if not already present
     if (!meditatedDates.includes(today)) {
       meditatedDates.push(today)
     }
-    
+
     // Calculate streak
     const sortedDates = meditatedDates.sort()
     let currentStreak = 1
-    
+
     for (let i = sortedDates.length - 1; i > 0; i--) {
       const current = new Date(sortedDates[i])
       const previous = new Date(sortedDates[i - 1])
       const diffDays = Math.floor((current.getTime() - previous.getTime()) / (1000 * 60 * 60 * 24))
-      
+
       if (diffDays === 1) {
         currentStreak++
       } else {
         break
       }
     }
-    
+
     const longestStreak = Math.max(stats.longestStreak, currentStreak)
     const totalSessions = stats.totalSessions + 1
     const totalMinutes = stats.totalMinutes + duration
     const points = stats.points + (duration * 10) // 10 points per minute
     const level = Math.floor(points / 1000) + 1 // Level up every 1000 points
-    
+
     const statsRef = doc(db, 'userStats', userId)
     await updateDoc(statsRef, {
       totalSessions,
@@ -329,7 +334,7 @@ export const addShield = async (userId: string): Promise<void> => {
   try {
     const stats = await getUserStats(userId)
     if (!stats) return
-    
+
     const statsRef = doc(db, 'userStats', userId)
     await updateDoc(statsRef, {
       shields: stats.shields + 1,
@@ -345,13 +350,13 @@ export const useShield = async (userId: string): Promise<boolean> => {
   try {
     const stats = await getUserStats(userId)
     if (!stats || stats.shields <= 0) return false
-    
+
     const statsRef = doc(db, 'userStats', userId)
     await updateDoc(statsRef, {
       shields: stats.shields - 1,
       updatedAt: serverTimestamp()
     })
-    
+
     return true
   } catch (error) {
     console.error('Error using shield:', error)
