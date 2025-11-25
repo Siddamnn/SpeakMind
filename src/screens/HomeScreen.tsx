@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { IoSparkles, IoJournal, IoFitness, IoHeadset, IoAnalytics, IoFlame } from 'react-icons/io5'
 import type { Screen } from '../App'
 import { recommendVideos, type VideoSuggestion } from '../utils/youtubeAI'
 import { getContextualSearchQuery, saveUserContext } from '../utils/userContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { motivationalQuotes, shuffleQuotes, type MotivationalQuote } from '../data/motivationalQuotes'
 
 // Import mood images from public folder
 import calmImg from '/Homescreen/Calm.gif'
@@ -42,12 +43,17 @@ interface Tile {
 
 export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   const { t } = useLanguage()
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const [selectedMood, setSelectedMood] = useState<MoodValue>(null)
   const [videoSuggestions, setVideoSuggestions] = useState<VideoSuggestion[]>([])
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [isLoadingVideos, setIsLoadingVideos] = useState(false)
   const [videoSourceContext, setVideoSourceContext] = useState<'context' | 'mood' | 'default'>('default')
+  
+  // Motivational quotes carousel state
+  const [shuffledQuotes, setShuffledQuotes] = useState<MotivationalQuote[]>(() => shuffleQuotes(motivationalQuotes))
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
+  const quoteCarouselRef = useRef<HTMLDivElement>(null)
 
   // Mood to search query mapping
   const moodToQuery: Record<Exclude<MoodValue, null>, string> = {
@@ -138,7 +144,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       title: 'EEG Brain Health',
       subtitle: 'Track & Improve',
       image: '/homepagetile-coverimages/EEG Brain Health.webp',
-      size: 'small',
+      size: 'medium',
       color: 'from-teal-500 to-cyan-500',
       gradient: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
       onClick: () => onNavigate('eegBrainHealth')
@@ -246,6 +252,23 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
     return () => clearInterval(interval)
   }, [videoSuggestions])
 
+  // Auto-rotate motivational quotes every 6 seconds with infinite loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentQuoteIndex((prev) => {
+        const nextIndex = prev + 1
+        // If we've reached the end, shuffle and restart
+        if (nextIndex >= shuffledQuotes.length) {
+          const newShuffled = shuffleQuotes(motivationalQuotes)
+          setShuffledQuotes(newShuffled)
+          return 0
+        }
+        return nextIndex
+      })
+    }, 6000) // 6 seconds per quote
+    return () => clearInterval(interval)
+  }, [shuffledQuotes.length])
+
   const moods = [
     { emoji: calmImg, label: t('home.calm'), value: 'calm' },
     { emoji: relaxImg, label: t('home.relax'), value: 'relax' },
@@ -287,7 +310,44 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-blue-50/30 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-20 transition-colors duration-300">
+    <div className="min-h-screen relative overflow-hidden pb-20">
+      {/* Breathing Background - Dark Theme (Night Sky Image) */}
+      {isDark && (
+        <>
+          {/* Night sky image with subtle breathing animation */}
+          <div 
+            className="absolute inset-0 animate-breathe"
+            style={{
+              backgroundImage: 'url(/Homescreen/night_sky.webp)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 40%', // Shift to show middle area on phone screens
+              backgroundRepeat: 'no-repeat',
+              filter: 'brightness(0.4)', // 60% brightness reduction (40% more from previous 20%)
+              willChange: 'transform'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Breathing Background - Light Theme (Day Sky Image) */}
+      {!isDark && (
+        <>
+          {/* Day sky image with subtle breathing animation */}
+          <div 
+            className="absolute inset-0 animate-breathe"
+            style={{
+              backgroundImage: 'url(/Homescreen/days_sky.webp)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 40%', // Shift to show middle area on phone screens
+              backgroundRepeat: 'no-repeat',
+              willChange: 'transform'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Content Container */}
+      <div className="relative z-10">
       {/* Header */}
       <div className="px-4 pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
@@ -297,46 +357,117 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
             </h1>
             <p className="text-sm text-gray-600 dark:text-dark-text-secondary">{t('home.howAreYouFeeling')}</p>
           </div>
-          <button
-            onClick={() => onNavigate('profile')}
-            className="p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors"
-          >
-            <svg className="w-6 h-6 text-gray-600 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Daily Streak Icon */}
+            <button
+              onClick={() => onNavigate('streaks')}
+              className="relative p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors group"
+              title={`${user.streak} ${t('home.dayStreak')}`}
+            >
+              <IoFlame className="w-6 h-6 text-orange-500 dark:text-orange-400" />
+              {user.streak > 0 && (
+                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {user.streak}
+                </span>
+              )}
+            </button>
+            {/* Profile Icon */}
+            <button
+              onClick={() => onNavigate('profile')}
+              className="p-2 rounded-full bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm hover:bg-white dark:hover:bg-dark-card transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-600 dark:text-dark-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Day Streak - New Design Above Mood Selector */}
-        <button
-          onClick={() => onNavigate('streaks')}
-          className="w-full mb-3 relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
+        {/* Motivational Quote Carousel - Horizontal Infinite Slide with Glassmorphism */}
+        <div 
+          ref={quoteCarouselRef}
+          className="w-full mb-3 relative rounded-2xl overflow-hidden transition-all duration-700 ease-in-out"
           style={{
-            background: 'linear-gradient(135deg, #eab308 0%, #f97316 100%)',
-            minHeight: '80px'
+            minHeight: '90px',
+            background: shuffledQuotes[currentQuoteIndex]?.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            opacity: 0.85,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset'
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/20 to-orange-500/20" />
-          <div className="relative z-10 flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <IoFlame className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-bold text-lg">{user.streak} {t('home.dayStreak')}</h3>
-                <p className="text-white/90 text-sm">{t('home.keepGoing')}</p>
-              </div>
-            </div>
-            <div className="text-white/80">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+          {/* Dark tint overlay - more transparent */}
+          <div 
+            className="absolute inset-0 transition-opacity duration-700"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.55) 100%)'
+            }}
+          />
+          
+          {/* Glassmorphism overlay - more transparent */}
+          <div 
+            className="absolute inset-0 backdrop-blur-sm transition-opacity duration-700"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          />
+          
+          {/* Content */}
+          <div className="relative z-10 p-5 flex flex-col justify-center items-center text-center h-full">
+            <div 
+              key={currentQuoteIndex}
+              className="animate-fadeIn"
+            >
+              <p 
+                className="text-white text-lg md:text-xl font-medium leading-relaxed mb-2 drop-shadow-lg"
+                style={{ 
+                  fontFamily: "'Dancing Script', cursive", 
+                  fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+                }}
+              >
+                "{shuffledQuotes[currentQuoteIndex]?.quote}"
+              </p>
+              <p 
+                className="text-white/90 text-sm md:text-base font-light italic drop-shadow"
+                style={{ 
+                  fontFamily: "'Great Vibes', cursive", 
+                  fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                — {shuffledQuotes[currentQuoteIndex]?.author}
+              </p>
             </div>
           </div>
-        </button>
+          
+          {/* Progress dots indicator */}
+          <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
+            {shuffledQuotes.slice(0, 5).map((_, index) => (
+              <div
+                key={index}
+                className={`rounded-full transition-all duration-500 ${
+                  index === currentQuoteIndex % 5
+                    ? 'w-6 h-1.5 bg-white/90 shadow-md'
+                    : 'w-1.5 h-1.5 bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
 
         {/* Mood Selector - Single Rectangle Container with Circular Frames - Full width to match tiles */}
-        <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-dark-card p-4">
+        <div 
+          className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 p-4 backdrop-blur-xl"
+          style={isDark ? {
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          } : {
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+          }}
+        >
           <div className="grid grid-cols-4 gap-4">
             {moods.map((mood) => (
               <button
@@ -349,13 +480,32 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
               >
                 {/* Circular Frame */}
                 <div
-                  className={`relative rounded-full overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-dark-card aspect-square flex items-center justify-center w-full ${
+                  className={`relative rounded-full overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 backdrop-blur-md aspect-square flex items-center justify-center w-full ${
                     selectedMood === mood.value ? 'ring-2' : ''
                   }`}
                   style={selectedMood === mood.value ? {
                     '--tw-ring-color': colors.primary,
-                    borderColor: colors.primary
-                  } as React.CSSProperties : undefined}
+                    borderColor: colors.primary,
+                    background: isDark 
+                      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)'
+                      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%)',
+                    border: isDark 
+                      ? '1px solid rgba(255, 255, 255, 0.2)'
+                      : '1px solid rgba(255, 255, 255, 0.4)',
+                    boxShadow: isDark
+                      ? '0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                      : '0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+                  } as React.CSSProperties : {
+                    background: isDark
+                      ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)'
+                      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.12) 100%)',
+                    border: isDark
+                      ? '1px solid rgba(255, 255, 255, 0.15)'
+                      : '1px solid rgba(255, 255, 255, 0.3)',
+                    boxShadow: isDark
+                      ? '0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+                  }}
                 >
                   {/* Emoji - Centered, reduced size */}
                   <img
@@ -450,8 +600,8 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                     opacity: 0.24
                   } : undefined}
                 />
-                {/* Dark Overlay for Text Readability - Increased darkness for better text visibility */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
+                {/* Dark Overlay for Text Readability - Brightened by 15% */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/15" />
               </div>
 
               {/* Content */}
@@ -518,8 +668,8 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                     opacity: 0.24
                   } : undefined}
                 />
-                {/* Dark Overlay for Text Readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30" />
+                {/* Dark Overlay for Text Readability - Brightened by 15% */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/15" />
               </div>
 
               {/* Content */}
@@ -629,6 +779,7 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

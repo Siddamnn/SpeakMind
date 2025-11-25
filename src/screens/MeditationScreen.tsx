@@ -25,7 +25,7 @@ interface MeditationScreenProps {
 
 const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
   const { t } = useLanguage();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   
   // Windows 8-style tiles with varied sizes for organized layout
   // Reorganized for better visual flow, proper spacing, and minimal gaps
@@ -108,7 +108,7 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       descriptionKey: 'meditation.mindBodySyncDesc',
       category: 'mindfulness',
       duration: 15,
-      image: 'https://images.pexels.com/photos/4056723/pexels-photo-4056723.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: 'https://images.pexels.com/photos/3759657/pexels-photo-3759657.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
       size: 'medium', // Increased from small to medium (25% size increase)
       color: 'from-violet-500 to-purple-600',
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #9333ea 100%)',
@@ -212,7 +212,44 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-blue-50/30 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg pb-20 transition-colors duration-300">
+    <div className="min-h-screen relative overflow-hidden pb-20">
+      {/* Breathing Background - Dark Theme (Night Sky Image) */}
+      {isDark && (
+        <>
+          {/* Night sky image with subtle breathing animation */}
+          <div 
+            className="absolute inset-0 animate-breathe"
+            style={{
+              backgroundImage: 'url(/Homescreen/night_sky.webp)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 40%', // Shift to show middle area on phone screens
+              backgroundRepeat: 'no-repeat',
+              filter: 'brightness(0.4)', // 60% brightness reduction (40% more from previous 20%)
+              willChange: 'transform'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Breathing Background - Light Theme (Day Sky Image) */}
+      {!isDark && (
+        <>
+          {/* Day sky image with subtle breathing animation */}
+          <div 
+            className="absolute inset-0 animate-breathe"
+            style={{
+              backgroundImage: 'url(/Homescreen/days_sky.webp)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 40%', // Shift to show middle area on phone screens
+              backgroundRepeat: 'no-repeat',
+              willChange: 'transform'
+            }}
+          />
+        </>
+      )}
+      
+      {/* Content Container */}
+      <div className="relative z-10">
       {/* Header */}
       <div className="px-4 pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
@@ -267,6 +304,13 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
                 />
                 {/* Dark Overlay for Text Readability - Reduced for better image visibility */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
+                {/* Mild Dark Vignette */}
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%)'
+                  }}
+                />
               </div>
 
               {/* Glassmorphism Content Container */}
@@ -315,6 +359,7 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
             </motion.button>
           ))}
         </div>
+      </div>
       </div>
     </div>
   )

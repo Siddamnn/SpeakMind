@@ -207,4 +207,68 @@
   .animate-fadeIn {
     animation: fadeIn 0.4s ease-out;
   }
+
+  @keyframes breathe {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.9;
+      background-position: 0% 50%;
+    }
+    50% {
+      transform: scale(1.02);
+      opacity: 1;
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes breatheSlow {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.6;
+      background-position: 0% 50%;
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.9;
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes twinkle {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  @keyframes twinkleSlow {
+    0%, 100% {
+      opacity: 0.2;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.15);
+    }
+  }
+
+  .animate-breathe {
+    animation: breathe 43s ease-in-out infinite;
+  }
+
+  .animate-breathe-slow {
+    animation: breatheSlow 12s ease-in-out infinite;
+  }
+
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+
+  .animate-twinkle-slow {
+    animation: twinkleSlow 4s ease-in-out infinite;
+  }
 }
