@@ -212,12 +212,14 @@
     0%, 100% {
       transform: scale(1);
       opacity: 0.9;
-      background-position: 0% 50%;
+      /* Start closer to center so motion feels gentler */
+      background-position: 20% 50%;
     }
     50% {
       transform: scale(1.02);
       opacity: 1;
-      background-position: 100% 50%;
+      /* Move less horizontally for a slower, calmer drift */
+      background-position: 80% 50%;
     }
   }
 
@@ -257,7 +259,8 @@
   }
 
   .animate-breathe {
-    animation: breathe 43s ease-in-out infinite;
+    /* Much slower, softer background drift for home + meditation */
+    animation: breathe 80s ease-in-out infinite;
   }
 
   .animate-breathe-slow {
