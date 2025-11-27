@@ -299,12 +299,14 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   // Memoized hover handlers to prevent recreation on every render
   const handleTileMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const element = e.currentTarget
-    element.style.boxShadow = `0 0 20px ${colors.primary}80, 0 0 40px ${colors.primary}40, 0 0 60px ${colors.primary}20`
-    element.style.borderColor = colors.primary
+    element.style.transform = 'scale(1.02)'
+    element.style.boxShadow = `0 0 30px ${colors.primary}60, 0 0 50px ${colors.primary}30`
+    element.style.borderColor = `${colors.primary}80`
   }, [colors.primary])
   
   const handleTileMouseLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const element = e.currentTarget
+    element.style.transform = ''
     element.style.boxShadow = ''
     element.style.borderColor = 'transparent'
   }, [])

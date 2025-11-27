@@ -6,6 +6,8 @@ import type { Screen } from '../App'
 import { IoChevronBack } from 'react-icons/io5'
 import { getUserLocation, formatDistance, type UserLocation } from '../utils/geolocation'
 import { fetchWellnessEvents, type ScrapedEvent } from '../utils/eventsAPI'
+import { fetchYogaCenters, fetchReligiousPlaces, fetchMeditationCenters, type Place } from '../utils/googlePlacesAPI'
+import { getLocalitiesForCity } from '../utils/cityLocalities'
 
 interface SharingScreenProps {
   onNavigate: (screen: Screen) => void
@@ -159,12 +161,21 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
 
   // Events state
   const [selectedCity, setSelectedCity] = useState<string>('Mumbai')
+  const [selectedLocality, setSelectedLocality] = useState<string>('')
   const [showNewEvent, setShowNewEvent] = useState(false)
   const [events, setEvents] = useState<Event[]>([])
   const [newEventTitle, setNewEventTitle] = useState('')
   const [newEventAddress, setNewEventAddress] = useState('')
   const [newEventDate, setNewEventDate] = useState('')
   const [newEventTime, setNewEventTime] = useState('')
+
+  // Places state
+  const [yogaCenters, setYogaCenters] = useState<Place[]>([])
+  const [religiousPlaces, setReligiousPlaces] = useState<Place[]>([])
+  const [meditationCenters, setMeditationCenters] = useState<Place[]>([])
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false)
+  const [activeCategory, setActiveCategory] = useState<'yoga' | 'religious' | 'meditation' | null>(null)
+  const [placesError, setPlacesError] = useState<string | null>(null)
 
   // Real events from scraping
   const [scrapedEvents, setScrapedEvents] = useState<ScrapedEvent[]>([])
@@ -291,45 +302,12 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
 
   // Get user location when Events tab is opened
   useEffect(() => {
-    if (activeTab === 'events' && !userLocation) {
-      console.log('Requesting user location...')
-
-      // 🔧 TEST MODE: Override location to Mumbai for testing web scraper
-      // Set to false to use real user location
-      const USE_TEST_LOCATION = true;
-
-      if (USE_TEST_LOCATION) {
-        console.log('🧪 Using test location: Mumbai, India')
-        const testLocation = {
-          latitude: 19.0760,  // Mumbai coordinates
-          longitude: 72.8777,
-          city: 'Mumbai',
-          accuracy: 100
-        };
-        setUserLocation(testLocation);
-        setSelectedCity('Mumbai');
-        setLocationError(null);
-        return;
-      }
-
-      // Real location for production
-      getUserLocation()
-        .then((location) => {
-          console.log('User location obtained:', location)
-          setUserLocation(location)
-          setLocationError(null)
-
-          // Update city selector if we got a city name
-          if (location.city) {
-            setSelectedCity(location.city)
-          }
-        })
-        .catch((error) => {
-          console.error('Location error:', error)
-          setLocationError(error.message)
-        })
+    // Disabled auto-detection - users should manually select their city
+    // This improves privacy and gives users control over location data
+    if (activeTab === 'events') {
+      console.log('Events tab opened. User should select city manually.')
     }
-  }, [activeTab, userLocation])
+  }, [activeTab])
 
   // Fetch scraped events when city changes or Events tab is opened
   useEffect(() => {
@@ -360,6 +338,65 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
         })
     }
   }, [activeTab, selectedCity, userLocation])
+
+  // Fetch places when locality or category changes
+  useEffect(() => {
+    if (!selectedLocality || !activeCategory) {
+      return
+    }
+
+    const fetchPlaces = async () => {
+      setIsLoadingPlaces(true)
+      setPlacesError(null)
+      try {
+        if (activeCategory === 'yoga') {
+          const response = await fetchYogaCenters(selectedCity, selectedLocality)
+          if (response.success) {
+            setYogaCenters(response.places)
+            setPlacesError(null)
+          } else {
+            setYogaCenters([])
+            setPlacesError(response.error || 'Failed to load yoga centers')
+          }
+        } else if (activeCategory === 'religious') {
+          const response = await fetchReligiousPlaces(selectedCity, selectedLocality)
+          if (response.success) {
+            setReligiousPlaces(response.places)
+            setPlacesError(null)
+          } else {
+            setReligiousPlaces([])
+            setPlacesError(response.error || 'Failed to load religious places')
+          }
+        } else if (activeCategory === 'meditation') {
+          const response = await fetchMeditationCenters(selectedCity)
+          if (response.success) {
+            setMeditationCenters(response.places)
+            setPlacesError(null)
+          } else {
+            setMeditationCenters([])
+            setPlacesError(response.error || 'Failed to load meditation centers')
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching places:', error)
+        setPlacesError(error instanceof Error ? error.message : 'Unknown error occurred')
+      } finally {
+        setIsLoadingPlaces(false)
+      }
+    }
+
+    fetchPlaces()
+  }, [selectedLocality, activeCategory, selectedCity])
+
+  // Reset locality when city changes
+  useEffect(() => {
+    setSelectedLocality('')
+    setActiveCategory(null)
+    setYogaCenters([])
+    setReligiousPlaces([])
+    setMeditationCenters([])
+    setPlacesError(null)
+  }, [selectedCity])
 
   const handleCreateEvent = async () => {
     if (!currentUser) {
@@ -659,7 +696,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
             </button>
             <button
               onClick={() => setActiveTab('events')}
-              className={`flex-1 py-2 px-3 rounded-full text-xs font-medium transition-colors ${activeTab === 'events' ? 'bg-white text-gray-900 shadow' : 'text-white/80 hover:text-white'}`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'events' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
             >
               Events
             </button>
@@ -884,7 +921,12 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
           <div>
             {/* City Selector */}
             <div className="mb-4 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl p-4">
-              <label className="block text-gray-900 text-sm font-semibold mb-2">📍 Select City</label>
+              <label className="block text-gray-900 text-sm font-semibold mb-2">
+                📍 Choose Your City
+              </label>
+              <p className="text-xs text-gray-600 mb-3">
+                Select your city to see local wellness events and connect with nearby community members
+              </p>
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
@@ -906,23 +948,254 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
               </select>
             </div>
 
-            {/* Location Status */}
-            {locationError && (
-              <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
-                <p className="text-sm text-yellow-800">
-                  📍 {locationError}
+            {/* Locality Selector */}
+            <div className="mb-4 bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl p-4">
+              <label className="block text-gray-900 text-sm font-semibold mb-2">
+                🏘️ Choose Your Locality
+              </label>
+              <p className="text-xs text-gray-600 mb-3">
+                Select your area to discover nearby yoga centers, temples, and meditation organizations
+              </p>
+              <select
+                value={selectedLocality}
+                onChange={(e) => setSelectedLocality(e.target.value)}
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+                style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%23374151\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                  paddingRight: '2.5rem',
+                  appearance: 'none'
+                }}
+              >
+                <option value="">Select a locality</option>
+                {getLocalitiesForCity(selectedCity).map((locality) => (
+                  <option key={locality} value={locality} className="bg-white text-gray-900">
+                    {locality}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category Selection */}
+            {selectedLocality && (
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-900 mb-3 px-1">
+                  🔍 Explore Nearby Places
                 </p>
-                <p className="text-xs text-yellow-600 mt-1">
-                  We'll show events for {selectedCity} instead.
-                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  <button
+                    onClick={() => setActiveCategory(activeCategory === 'yoga' ? null : 'yoga')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      activeCategory === 'yoga'
+                        ? 'bg-purple-500 text-white shadow-md'
+                        : 'bg-white text-gray-700 border border-gray-300'
+                    }`}
+                  >
+                    🧘 Yoga & Meditation Centers
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory(activeCategory === 'religious' ? null : 'religious')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      activeCategory === 'religious'
+                        ? 'bg-purple-500 text-white shadow-md'
+                        : 'bg-white text-gray-700 border border-gray-300'
+                    }`}
+                  >
+                    🕉️ Religious Places
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory(activeCategory === 'meditation' ? null : 'meditation')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      activeCategory === 'meditation'
+                        ? 'bg-purple-500 text-white shadow-md'
+                        : 'bg-white text-gray-700 border border-gray-300'
+                    }`}
+                  >
+                    🙏 Major Meditation Organizations
+                  </button>
+                </div>
               </div>
             )}
 
-            {userLocation && (
-              <div className="mb-4 bg-green-50 border border-green-200 rounded-2xl p-3">
-                <p className="text-sm text-green-800">
-                  📍 Your location detected: {userLocation.city || 'Near ' + selectedCity}
-                </p>
+            {/* Places Display */}
+            {selectedLocality && activeCategory && (
+              <div className="mb-6">
+                {placesError && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">⚠️</span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-red-900 mb-1">Error Loading Places</h4>
+                        <p className="text-sm text-red-700">{placesError}</p>
+                        <button
+                          onClick={() => {
+                            setPlacesError(null)
+                            setActiveCategory(null)
+                          }}
+                          className="mt-2 text-xs text-red-600 hover:text-red-800 font-medium"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {isLoadingPlaces ? (
+                  <div className="bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl p-8 text-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                    <p className="text-gray-600 text-sm">Finding places in {selectedLocality}...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeCategory === 'yoga' && yogaCenters.length > 0 && (
+                      <>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3 px-1">
+                          🧘 Yoga & Meditation Centers
+                        </h3>
+                        {yogaCenters.map((place, index) => (
+                          <div
+                            key={`yoga-${index}`}
+                            className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-2xl p-4 hover:shadow-md transition-all"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900 flex-1 pr-2">{place.name}</h4>
+                              {place.rating && (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full whitespace-nowrap">
+                                  ⭐ {place.rating}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1.5 text-sm">
+                              <div className="flex items-start text-gray-700">
+                                <span className="mr-2">📍</span>
+                                <span className="flex-1">{place.address}</span>
+                              </div>
+                              {place.distance && (
+                                <div className="flex items-center text-green-600 font-medium">
+                                  <span className="mr-2">🚶</span>
+                                  <span>{formatDistance(place.distance)}</span>
+                                </div>
+                              )}
+                              {place.phone && (
+                                <div className="flex items-center text-gray-700">
+                                  <span className="mr-2">📞</span>
+                                  <a href={`tel:${place.phone}`} className="text-purple-600 hover:underline">
+                                    {place.phone}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {activeCategory === 'religious' && religiousPlaces.length > 0 && (
+                      <>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3 px-1">
+                          🕉️ Religious Places
+                        </h3>
+                        {religiousPlaces.map((place, index) => (
+                          <div
+                            key={`religious-${index}`}
+                            className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-2xl p-4 hover:shadow-md transition-all"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900 flex-1 pr-2">{place.name}</h4>
+                              {place.rating && (
+                                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full whitespace-nowrap">
+                                  ⭐ {place.rating}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1.5 text-sm">
+                              <div className="flex items-start text-gray-700">
+                                <span className="mr-2">📍</span>
+                                <span className="flex-1">{place.address}</span>
+                              </div>
+                              {place.distance && (
+                                <div className="flex items-center text-orange-600 font-medium">
+                                  <span className="mr-2">🚶</span>
+                                  <span>{formatDistance(place.distance)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center text-gray-700">
+                                <span className="mr-2">🏛️</span>
+                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                                  {place.type}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {activeCategory === 'meditation' && meditationCenters.length > 0 && (
+                      <>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3 px-1">
+                          🙏 Major Meditation Organizations
+                        </h3>
+                        {meditationCenters.map((place, index) => (
+                          <div
+                            key={`meditation-${index}`}
+                            className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 hover:shadow-md transition-all"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900 flex-1 pr-2">{place.name}</h4>
+                              {place.rating && (
+                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full whitespace-nowrap">
+                                  ⭐ {place.rating}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1.5 text-sm">
+                              <div className="flex items-start text-gray-700">
+                                <span className="mr-2">📍</span>
+                                <span className="flex-1">{place.address}</span>
+                              </div>
+                              {place.distance && (
+                                <div className="flex items-center text-purple-600 font-medium">
+                                  <span className="mr-2">🚶</span>
+                                  <span>{formatDistance(place.distance)}</span>
+                                </div>
+                              )}
+                              {place.website && (
+                                <div className="flex items-center text-gray-700">
+                                  <span className="mr-2">🌐</span>
+                                  <a 
+                                    href={place.website} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-purple-600 hover:underline text-xs"
+                                  >
+                                    Visit Website
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Empty State */}
+                    {((activeCategory === 'yoga' && yogaCenters.length === 0) ||
+                      (activeCategory === 'religious' && religiousPlaces.length === 0) ||
+                      (activeCategory === 'meditation' && meditationCenters.length === 0)) && (
+                      <div className="bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl p-8 text-center text-gray-900">
+                        <div className="text-5xl mb-3">🔍</div>
+                        <h3 className="font-semibold mb-2">No Places Found</h3>
+                        <p className="text-gray-600 text-sm">
+                          We couldn't find any {activeCategory === 'yoga' ? 'yoga centers' : activeCategory === 'religious' ? 'religious places' : 'meditation centers'} in {selectedLocality}.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

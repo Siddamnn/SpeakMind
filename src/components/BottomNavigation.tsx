@@ -19,6 +19,7 @@ const BottomNavigation = ({ currentScreen, onNavigate }: BottomNavigationProps) 
   const { t } = useLanguage()
   const { colors, isDark } = useTheme()
   const [isHovered, setIsHovered] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const navItems: DockIcon[] = [
     {
@@ -55,6 +56,14 @@ const BottomNavigation = ({ currentScreen, onNavigate }: BottomNavigationProps) 
 
   const activeItem = navItems.find(item => item.isActive) || navItems[0]
 
+  // Determine if navigation should be shown (hover or click-expanded)
+  const showFullNav = isHovered || isExpanded
+
+  // Handle click to toggle expansion
+  const handleToggle = () => {
+    setIsExpanded(!isExpanded)
+  }
+
   return (
     <>
       <GlassFilter />
@@ -75,13 +84,14 @@ const BottomNavigation = ({ currentScreen, onNavigate }: BottomNavigationProps) 
           }}
           initial={false}
           animate={{
-            width: isHovered ? 'auto' : '60px',
+            width: showFullNav ? 'auto' : '60px',
             height: '60px',
-            borderRadius: isHovered ? '24px' : '30px',
+            borderRadius: showFullNav ? '24px' : '30px',
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          onClick={handleToggle}
         >
           {/* Glass Layers - Dark mode optimized */}
           <div
@@ -112,7 +122,7 @@ const BottomNavigation = ({ currentScreen, onNavigate }: BottomNavigationProps) 
           {/* Content */}
           <div className="relative z-30 flex items-center px-2 h-full">
             <AnimatePresence mode="wait">
-              {!isHovered ? (
+              {!showFullNav ? (
                 <motion.div
                   key="active-icon"
                   initial={{ opacity: 0, scale: 0.5 }}
@@ -156,7 +166,11 @@ const BottomNavigation = ({ currentScreen, onNavigate }: BottomNavigationProps) 
                           e.currentTarget.style.color = ''
                         }
                       }}
-                      onClick={item.onClick}
+                      onClick={(e) => {
+                        e.stopPropagation() // Prevent triggering the parent's toggle
+                        item.onClick()
+                        setIsExpanded(false) // Collapse after navigation
+                      }}
                     >
                       <item.icon className="text-2xl" />
                       <span className="text-[10px] md:text-xs font-medium whitespace-nowrap">{item.label}</span>

@@ -77,6 +77,12 @@ SpeakMind is a modern mental wellness platform that leverages AI technology to p
 - **Anonymous Posting** - Share safely and comfortably
 - **Real-time Updates** - Firestore-powered live discussions
 - **Multi-language** - Communicate in your preferred language
+- **Wellness Events** - Discover local meditation and yoga events
+- **Nearby Places** - Find yoga centers, temples, and meditation organizations in your locality
+  - Locality-based search for major Indian cities
+  - Yoga & meditation centers nearby
+  - Religious places (temples, gurudwaras, churches, mosques)
+  - Major organizations (Osho, Art of Living, Isha Foundation, Brahma Kumaris)
 
 ---
 
@@ -98,6 +104,8 @@ SpeakMind is a modern mental wellness platform that leverages AI technology to p
   - Firestore (Real-time database)
   - Offline persistence enabled
 - **Google Gemini AI** - AI coaching and conversations
+- **YouTube Data API v3** - Personalized video recommendations
+- **Google Places API** - Location-based wellness center discovery
 - **Serverless Functions** - API key security
 
 ### State Management
@@ -147,6 +155,12 @@ SpeakMind is a modern mental wellness platform that leverages AI technology to p
    
    # Google AI (Gemini)
    VITE_GEMINI_API_KEY=your_gemini_api_key
+   
+   # YouTube Data API v3
+   VITE_YOUTUBE_API_KEY=your_youtube_api_key
+   
+   # Google Places API (for nearby wellness centers)
+   GOOGLE_PLACES_API_KEY=your_google_places_api_key
    
    # Optional: Pexels API for images
    VITE_PEXELS_API_KEY=your_pexels_key
