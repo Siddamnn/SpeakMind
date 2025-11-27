@@ -7,6 +7,58 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { motivationalQuotes, shuffleQuotes, type MotivationalQuote } from '../data/motivationalQuotes'
 
+// Scroll animation hook
+const useScrollAnimation = () => {
+  const [visibleItems, setVisibleItems] = useState<Set<string>>(new Set())
+  const observerRef = useRef<IntersectionObserver | null>(null)
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute('data-tile-id')
+          if (!id) return
+
+          setVisibleItems((prev) => {
+            const next = new Set(prev)
+            // Show item if it's intersecting and either:
+            // 1. Has significant visibility (intersectionRatio > 0.3), OR
+            // 2. Is at the bottom of the viewport (boundingClientRect.bottom is near viewport bottom)
+            const rect = entry.boundingClientRect
+            const viewportHeight = window.innerHeight
+            const isNearBottom = rect.bottom >= viewportHeight * 0.7 && rect.top < viewportHeight
+            
+            if (entry.isIntersecting && (entry.intersectionRatio > 0.3 || isNearBottom)) {
+              next.add(id)
+            } else if (!entry.isIntersecting && entry.intersectionRatio === 0) {
+              next.delete(id)
+            }
+            return next
+          })
+        })
+      },
+      {
+        threshold: [0, 0.1, 0.3, 0.6, 1],
+        rootMargin: '-20% 0px -10% 0px' // More lenient bottom margin to catch bottom items
+      }
+    )
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [])
+
+  const observeElement = useCallback((element: HTMLElement | null) => {
+    if (!element || !observerRef.current) return
+
+    observerRef.current.observe(element)
+  }, [])
+
+  return { visibleItems, observeElement }
+}
+
 // Import mood images from public folder
 import calmImg from '/Homescreen/Calm.gif'
 import relaxImg from '/Homescreen/Relax.gif'
@@ -54,6 +106,10 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   const [shuffledQuotes, setShuffledQuotes] = useState<MotivationalQuote[]>(() => shuffleQuotes(motivationalQuotes))
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
   const quoteCarouselRef = useRef<HTMLDivElement>(null)
+
+  // Scroll animation for tiles
+  const { visibleItems, observeElement } = useScrollAnimation()
+  const tileRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
   // Mood to search query mapping
   const moodToQuery: Record<Exclude<MoodValue, null>, string> = {
@@ -420,21 +476,25 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
               className="animate-fadeIn"
             >
               <p 
-                className="text-white text-lg md:text-xl font-medium leading-relaxed mb-2 drop-shadow-lg"
+                className="text-white text-xl md:text-2xl font-bold leading-relaxed mb-2 drop-shadow-lg"
                 style={{ 
-                  fontFamily: "'Dancing Script', cursive", 
-                  fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)',
-                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+                  fontFamily: "'Playfair Display', 'Georgia', serif", 
+                  fontSize: 'clamp(1.4rem, 4.5vw, 2rem)',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+                  fontWeight: '700',
+                  letterSpacing: '0.02em'
                 }}
               >
                 "{shuffledQuotes[currentQuoteIndex]?.quote}"
               </p>
               <p 
-                className="text-white/90 text-sm md:text-base font-light italic drop-shadow"
+                className="text-white/90 text-base md:text-lg font-semibold italic drop-shadow"
                 style={{ 
-                  fontFamily: "'Great Vibes', cursive", 
-                  fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
+                  fontFamily: "'Playfair Display', 'Georgia', serif", 
+                  fontSize: 'clamp(1rem, 3vw, 1.3rem)',
+                  textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)',
+                  fontWeight: '600',
+                  letterSpacing: '0.01em'
                 }}
               >
                 — {shuffledQuotes[currentQuoteIndex]?.author}
@@ -574,18 +634,32 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
       <div className="px-4">
         <div className="grid grid-cols-2 gap-3 auto-rows-[100px]" style={{ gridAutoFlow: 'dense' }}>
           {/* Regular Tiles */}
-          {tiles.map((tile) => (
-            <button
-              key={tile.id}
-              onClick={tile.onClick}
-              className={`${getTileSizeClasses(tile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]`}
-              style={{
-                border: '2px solid transparent',
-                transition: 'all 0.3s ease'
-              } as React.CSSProperties}
-              onMouseEnter={handleTileMouseEnter}
-              onMouseLeave={handleTileMouseLeave}
-            >
+          {tiles.map((tile) => {
+            const isVisible = visibleItems.has(tile.id)
+            return (
+              <button
+                key={tile.id}
+                ref={(el) => {
+                  if (el) {
+                    tileRefs.current.set(tile.id, el)
+                    observeElement(el)
+                  }
+                }}
+                data-tile-id={tile.id}
+                onClick={tile.onClick}
+                className={`${getTileSizeClasses(tile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] ${
+                  isVisible 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-40 translate-y-4'
+                }`}
+                style={{
+                  border: '2px solid transparent',
+                  transition: 'opacity 0.6s ease-out, transform 0.6s ease-out, filter 0.6s ease-out',
+                  filter: isVisible ? 'blur(0px)' : (isDark ? 'blur(3px)' : 'blur(4px)')
+                } as React.CSSProperties}
+                onMouseEnter={handleTileMouseEnter}
+                onMouseLeave={handleTileMouseLeave}
+              >
               {/* Background Image */}
               <div className="absolute inset-0">
                 <img
@@ -639,21 +713,36 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
               </div>
             </button>
-          ))}
+            )
+          })}
           
           {/* YouTube Video Tile - Appears at bottom after all other tiles */}
-          {videoTile && (
-            <button
-              key={videoTile.id}
-              onClick={videoTile.onClick}
-              className={`${getTileSizeClasses(videoTile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]`}
-              style={{
-                border: '2px solid transparent',
-                transition: 'all 0.3s ease'
-              } as React.CSSProperties}
-              onMouseEnter={handleTileMouseEnter}
-              onMouseLeave={handleTileMouseLeave}
-            >
+          {videoTile && (() => {
+            const isVisible = visibleItems.has(videoTile.id)
+            return (
+              <button
+                key={videoTile.id}
+                ref={(el) => {
+                  if (el) {
+                    tileRefs.current.set(videoTile.id, el)
+                    observeElement(el)
+                  }
+                }}
+                data-tile-id={videoTile.id}
+                onClick={videoTile.onClick}
+                className={`${getTileSizeClasses(videoTile.size)} relative rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] ${
+                  isVisible 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-40 translate-y-4'
+                }`}
+                style={{
+                  border: '2px solid transparent',
+                  transition: 'opacity 0.6s ease-out, transform 0.6s ease-out, filter 0.6s ease-out',
+                  filter: isVisible ? 'blur(0px)' : (isDark ? 'blur(3px)' : 'blur(4px)')
+                } as React.CSSProperties}
+                onMouseEnter={handleTileMouseEnter}
+                onMouseLeave={handleTileMouseLeave}
+              >
               {/* Background Image */}
               <div className="absolute inset-0">
                 <img
@@ -707,7 +796,8 @@ export default function HomeScreen({ onNavigate, user }: HomeScreenProps) {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
               </div>
             </button>
-          )}
+            )
+          })()}
         </div>
       </div>
 

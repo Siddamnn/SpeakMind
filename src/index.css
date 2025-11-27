@@ -208,6 +208,41 @@
     animation: fadeIn 0.4s ease-out;
   }
 
+  /* Scroll fade animations for HomeScreen tiles */
+  @keyframes fadeInFromBottom {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+      filter: blur(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes fadeOutToTop {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+    to {
+      opacity: 0.4;
+      transform: translateY(-10px);
+      filter: blur(4px);
+    }
+  }
+
+  .scroll-fade-in {
+    animation: fadeInFromBottom 0.6s ease-out forwards;
+  }
+
+  .scroll-fade-out {
+    animation: fadeOutToTop 0.6s ease-out forwards;
+  }
+
   @keyframes breathe {
     0%, 100% {
       transform: scale(1);
