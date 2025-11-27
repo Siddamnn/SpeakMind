@@ -25,10 +25,46 @@ export default function EEGMeditationSession({
   const [session, setSession] = useState<EEGSession | null>(null)
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false)
-  
+  const [isPaused, setIsPaused] = useState(false)
+
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const eegService = EEGService.getInstance()
 
+  // Keep pause state in a ref so EEG callbacks can read it without re-subscribing
+  const isPausedRef = useRef(false)
+  useEffect(() => {
+    isPausedRef.current = isPaused
+  }, [isPaused])
+
+  // Throttle incoming EEG updates so React isn't overwhelmed by 200–300Hz streams
+  const lastUpdateRef = useRef<number>(0)
+
+  const tracks = [
+    {
+      id: 'om',
+      name: 'OM Chanting',
+      description: 'Traditional meditative chant',
+      emoji: '🕉️',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    },
+    {
+      id: 'rain',
+      name: 'Rain & Thunder',
+      description: 'Soothing storm ambience',
+      emoji: '🌧️',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    },
+    {
+      id: 'bowl',
+      name: 'Singing Bowls',
+      description: 'Deep Tibetan tones',
+      emoji: '🔔',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    },
+  ] as const
+
+  const [currentTrackId, setCurrentTrackId] = useState<(typeof tracks)[number]['id']>('om')
+  
   // Check if running on localhost
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 
@@ -52,7 +88,7 @@ export default function EEGMeditationSession({
     // Timer countdown
     let interval: NodeJS.Timeout | null = null
 
-    if (state === 'active' && timeLeft > 0) {
+    if (state === 'active' && !isPaused && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -67,7 +103,7 @@ export default function EEGMeditationSession({
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [state, timeLeft])
+  }, [state, timeLeft, isPaused])
 
   const handleConnect = async () => {
     setState('connecting')
@@ -84,6 +120,14 @@ export default function EEGMeditationSession({
     if (connected) {
       // Set up data callback
       eegService.onDataUpdate((data: EEGDataPoint) => {
+        if (isPausedRef.current) return
+
+        const now = Date.now()
+        const last = lastUpdateRef.current
+        // Limit UI updates to ~20 FPS
+        if (now - last < 50) return
+        lastUpdateRef.current = now
+
         setCurrentEEGData(data)
       })
       
@@ -99,25 +143,66 @@ export default function EEGMeditationSession({
     setSession(newSession)
     setState('active')
     setTimeLeft(duration * 60)
+    setIsPaused(false)
     
     // Start playing meditation music
-    playMeditationMusic()
+    playMeditationMusic(currentTrackId)
   }
 
-  const playMeditationMusic = () => {
-    // Use OM chanting or meditation melody
-    // You can replace this with actual audio file URLs
-    const audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' // Replace with OM chanting URL
-    
-    const audio = new Audio(audioUrl)
-    audio.loop = true
-    audio.volume = 0.5
-    audio.play().catch(error => {
-      console.error('Error playing audio:', error)
-      // Continue without audio if playback fails
-    })
-    
-    audioRef.current = audio
+  const playMeditationMusic = (trackId: (typeof tracks)[number]['id']) => {
+    const track = tracks.find(t => t.id === trackId) ?? tracks[0]
+
+    // Reuse existing audio element if possible
+    if (!audioRef.current) {
+      audioRef.current = new Audio(track.url)
+      audioRef.current.loop = true
+      audioRef.current.volume = 0.5
+    } else {
+      audioRef.current.src = track.url
+    }
+
+    audioRef.current
+      .play()
+      .then(() => {
+        setCurrentTrackId(trackId)
+      })
+      .catch(error => {
+        console.error('Error playing audio:', error)
+        // Continue without audio if playback fails
+      })
+  }
+
+  const handlePauseToggle = () => {
+    if (state !== 'active') return
+
+    if (!isPaused) {
+      // Pause timer + music + data recording
+      setIsPaused(true)
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      if (session) {
+        session.isActive = false
+      }
+    } else {
+      // Resume timer + music + data recording
+      setIsPaused(false)
+      if (audioRef.current) {
+        audioRef.current
+          .play()
+          .catch(err => console.error('Error resuming audio:', err))
+      }
+      if (session) {
+        session.isActive = true
+      }
+    }
+  }
+
+  const handleTrackChange = (trackId: (typeof tracks)[number]['id']) => {
+    setCurrentTrackId(trackId)
+    if (state === 'active') {
+      playMeditationMusic(trackId)
+    }
   }
 
   const handleSessionComplete = async () => {
@@ -170,7 +255,7 @@ export default function EEGMeditationSession({
     const sleepQuality = Math.min(100, Math.max(0, (avgTheta / (avgBeta + 1)) * 60))
 
     // Create prompt for AI analysis
-    const prompt = `Analyze this EEG meditation session data and provide personalized insights:
+    const prompt = `Analyze this EEG meditation session data and provide a concise, structured summary.
 
 Session Duration: ${Math.floor(session.duration / 60)} minutes
 Data Points Recorded: ${session.dataPoints.length}
@@ -188,13 +273,16 @@ Calculated Metrics:
 - Relaxation Level: ${relaxation.toFixed(0)}%
 - Sleep Quality Indicator: ${sleepQuality.toFixed(0)}%
 
-Please provide:
-1. A brief summary of the meditation session's effectiveness
-2. What the brain wave patterns indicate about the user's mental state
-3. Personalized recommendations for improving meditation practice
-4. Any notable patterns or insights
+Please provide your response in this exact format, keeping it short and easy to scan:
 
-Keep the response warm, encouraging, and educational. Focus on wellness and mindfulness.`
+1. Session Snapshot (2–3 short sentences)
+2. Brain State Highlights (3–5 bullet points, max 12 words each)
+3. Recommendations (3–5 bullet points, max 12 words each)
+
+Hard limits:
+- Max 220 words total
+- No long paragraphs, keep it punchy and visual
+- Warm, encouraging, mindfulness-focused tone`
 
     try {
       const response = await callGeminiAPI(prompt)
@@ -342,15 +430,71 @@ Keep up the great work on your mindfulness journey! 🧘‍♀️✨`
           <div className="w-10"></div>
         </div>
 
-        {/* Timer */}
-        <div className="text-center mb-6">
-          <div className="text-6xl font-bold text-gray-900 mb-2">{formatTime(timeLeft)}</div>
-          <p className="text-gray-600">Time remaining</p>
+        {/* Timer + controls */}
+        <div className="mb-6">
+          <div className="text-center mb-4">
+            <div className="text-6xl font-bold text-gray-900 mb-2">{formatTime(timeLeft)}</div>
+            <p className="text-gray-600">{isPaused ? 'Session paused' : 'Time remaining'}</p>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <button
+              onClick={handlePauseToggle}
+              className="px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-800 font-medium flex items-center gap-2 shadow-sm"
+            >
+              {isPaused ? (
+                <>
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                  Resume
+                </>
+              ) : (
+                <>
+                  <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                  Pause
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Music selection */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-4">
+            <p className="text-sm font-medium text-gray-800 mb-3">Meditation music</p>
+            <div className="flex flex-wrap gap-2">
+              {tracks.map(track => {
+                const isSelected = track.id === currentTrackId
+                return (
+                  <button
+                    key={track.id}
+                    onClick={() => handleTrackChange(track.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm'
+                        : 'bg-gray-50 text-gray-700 border border-gray-200'
+                    }`}
+                  >
+                    <span>{track.emoji}</span>
+                    <span>{track.name}</span>
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => {
+                  setCurrentTrackId('om')
+                  if (audioRef.current) {
+                    audioRef.current.pause()
+                  }
+                }}
+                className="px-3 py-2 rounded-xl text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200"
+              >
+                Silence
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* EEG Visualizer */}
         <div className="mb-6">
-          <EEGVisualizer data={currentEEGData} isActive={true} />
+          <EEGVisualizer data={currentEEGData} isActive={!isPaused} />
         </div>
 
         {/* Meditation guidance */}

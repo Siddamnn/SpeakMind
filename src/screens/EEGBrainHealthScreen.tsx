@@ -180,7 +180,7 @@ export default function EEGBrainHealthScreen({ onNavigate }: EEGBrainHealthScree
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('brainHealth.selectDuration')}</h3>
           <div className="flex flex-wrap gap-3">
-            {[5, 10, 15, 20, 30].map((duration) => (
+            {[2, 5, 10, 15, 20, 30].map((duration) => (
               <button
                 key={duration}
                 onClick={() => setSelectedDuration(duration)}
@@ -216,6 +216,45 @@ export default function EEGBrainHealthScreen({ onNavigate }: EEGBrainHealthScree
           >
             {t('brainHealth.regularMeditation')}
           </button>
+        </div>
+
+        {/* EEG Play Lab - future features */}
+        <div className="mt-8 space-y-3">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">EEG Play Lab</h3>
+          <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-2">
+            Explore fun, experimental ways to train your mind with EEG-powered mini experiences.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-4 rounded-2xl bg-white/80 dark:bg-dark-card/80 border border-gray-100 dark:border-dark-border flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🎯</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-dark-text">Focus Balance Game</p>
+                  <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                    Keep your beta waves steady to balance a glowing orb.
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex w-fit mt-1 px-2 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 text-[10px] font-medium text-purple-600 dark:text-purple-300">
+                Coming soon
+              </span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/80 dark:bg-dark-card/80 border border-gray-100 dark:border-dark-border flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🎵</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-dark-text">Calm Rhythm Trainer</p>
+                  <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                    Breathe with the beat while alpha waves paint ambient visuals.
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex w-fit mt-1 px-2 py-1 rounded-full bg-purple-50 dark:bg-purple-900/30 text-[10px] font-medium text-purple-600 dark:text-purple-300">
+                Prototype
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { EEGDataPoint } from '../utils/eegService'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface EEGVisualizerProps {
   data: EEGDataPoint | null
@@ -10,6 +11,8 @@ interface EEGVisualizerProps {
 }
 
 export default function EEGVisualizer({ data, isActive }: EEGVisualizerProps) {
+  const { colors, isDarkMode } = useTheme()
+
   const [waveHistory, setWaveHistory] = useState<{
     alpha: number[]
     beta: number[]
@@ -76,18 +79,19 @@ export default function EEGVisualizer({ data, isActive }: EEGVisualizerProps) {
   }
 
   const waveConfigs = [
-    { key: 'alpha' as const, color: '#9D7CF3', label: 'Alpha', freq: '8-13 Hz' },
-    { key: 'beta' as const, color: '#FFB8C4', label: 'Beta', freq: '13-30 Hz' },
-    { key: 'theta' as const, color: '#FDC75E', label: 'Theta', freq: '4-8 Hz' },
-    { key: 'delta' as const, color: '#FF9A76', label: 'Delta', freq: '0.5-4 Hz' },
-    { key: 'gamma' as const, color: '#10B981', label: 'Gamma', freq: '30-100 Hz' }
+    { key: 'alpha' as const, color: colors.primary, label: 'Alpha', freq: '8–13 Hz', description: 'Relaxed awareness' },
+    { key: 'beta' as const, color: '#F97373', label: 'Beta', freq: '13–30 Hz', description: 'Focus & thinking' },
+    { key: 'theta' as const, color: '#FACC6B', label: 'Theta', freq: '4–8 Hz', description: 'Deep relaxation' },
+    { key: 'delta' as const, color: '#38BDF8', label: 'Delta', freq: '0.5–4 Hz', description: 'Rest & recovery' },
   ]
+
+  const gammaValue = data?.gamma ?? 0
 
   if (!isActive) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6">
-        <div className="text-center text-gray-500">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm rounded-2xl border border-gray-100 dark:border-dark-border p-6">
+        <div className="text-center text-gray-500 dark:text-dark-text-secondary">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-dark-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           <p className="text-sm">EEG visualization will appear when session starts</p>
@@ -97,53 +101,92 @@ export default function EEGVisualizer({ data, isActive }: EEGVisualizerProps) {
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Live Brain Waves</h3>
-      
-      <div className="space-y-4">
-        {waveConfigs.map((config, index) => {
+    <div className="bg-white/80 dark:bg-dark-card/80 backdrop-blur-sm rounded-2xl border border-gray-100 dark:border-dark-border p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Live Brain Waves</h3>
+          <p className="text-xs text-gray-500 dark:text-dark-text-secondary">Updated in real time from your EEG signal</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${
+              isActive
+                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-dark-bg-secondary dark:text-dark-text-secondary'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+            {isActive ? 'Streaming' : 'Paused'}
+          </span>
+        </div>
+      </div>
+
+      {/* 2x2 grid of band tiles */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        {waveConfigs.map(config => {
           const values = waveHistory[config.key]
           const currentValue = data ? data[config.key] : 0
-          
+
           return (
-            <div key={config.key} className="space-y-2">
+            <div
+              key={config.key}
+              className="relative rounded-2xl border border-gray-100 dark:border-dark-border bg-gray-50/80 dark:bg-dark-bg-secondary/80 overflow-hidden p-3 flex flex-col gap-2"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
+                  <div
+                    className="w-2.5 h-2.5 rounded-full"
                     style={{ backgroundColor: config.color }}
-                  ></div>
-                  <span className="text-sm font-medium text-gray-700">{config.label}</span>
-                  <span className="text-xs text-gray-500">({config.freq})</span>
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-gray-800 dark:text-dark-text">
+                      {config.label}
+                    </span>
+                    <span className="text-[10px] text-gray-500 dark:text-dark-text-secondary">
+                      {config.freq}
+                    </span>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-semibold text-gray-600">
+                  <span className="text-xs font-semibold text-gray-800 dark:text-dark-text">
                     {currentValue.toFixed(1)}μV
                   </span>
+                  <div className="text-[10px] text-gray-500 dark:text-dark-text-secondary">
+                    {config.description}
+                  </div>
                 </div>
               </div>
-              
-              <div className="relative h-20 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+
+              <div className="relative h-16 rounded-xl overflow-hidden">
+                <div className="absolute inset-0 opacity-[0.15]">
+                  <div
+                    className="w-full h-full"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(to right, rgba(148,163,184,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.35) 1px, transparent 1px)',
+                      backgroundSize: '12px 12px',
+                    }}
+                  />
+                </div>
+
                 <svg
                   ref={svgRef}
                   width="100%"
                   height="100%"
                   viewBox="0 0 400 80"
                   preserveAspectRatio="none"
-                  className="w-full h-full"
+                  className="relative w-full h-full"
                 >
-                  {/* Grid pattern */}
-                  <defs>
-                    <pattern id={`grid-${config.key}`} width="20" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill={`url(#grid-${config.key})`} />
-                  
-                  {/* Center line */}
-                  <line x1="0" y1="40" x2="400" y2="40" stroke="#d1d5db" strokeWidth="1" strokeDasharray="2,2"/>
-                  
-                  {/* Wave visualization */}
+                  <line
+                    x1="0"
+                    y1="40"
+                    x2="400"
+                    y2="40"
+                    stroke={isDarkMode ? '#4b5563' : '#d1d5db'}
+                    strokeWidth="1"
+                    strokeDasharray="2,2"
+                  />
+
                   {values.length > 0 && renderWave(values, config.color, 80, 0)}
                 </svg>
               </div>
@@ -151,12 +194,24 @@ export default function EEGVisualizer({ data, isActive }: EEGVisualizerProps) {
           )
         })}
       </div>
-      
-      {/* Connection status indicator */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-xs text-gray-600">Receiving live data</span>
+
+      {/* Gamma highlight strip */}
+      <div className="mt-2 flex items-center justify-between rounded-2xl border border-gray-100 dark:border-dark-border bg-gradient-to-r from-purple-50/70 via-indigo-50/70 to-sky-50/70 dark:from-purple-900/20 dark:via-indigo-900/20 dark:to-sky-900/20 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center">
+            <span className="text-xs">✨</span>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-800 dark:text-dark-text">Gamma activity</p>
+            <p className="text-[10px] text-gray-500 dark:text-dark-text-secondary">
+              High-level processing & deep focus
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-semibold text-purple-600 dark:text-purple-300">
+            {gammaValue.toFixed(1)}μV
+          </p>
         </div>
       </div>
     </div>
