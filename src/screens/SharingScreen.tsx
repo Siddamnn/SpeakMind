@@ -160,7 +160,7 @@ const formatTimeAgo = (timestamp: Timestamp | { seconds: number; nanoseconds: nu
 
 export default function SharingScreen({ onNavigate }: SharingScreenProps) {
   const { currentUser } = useAuth()
-  const { colors, isDark, colorTheme } = useTheme()
+  const { colors, isDark, theme } = useTheme()
   const [activeTab, setActiveTab] = useState<'chat' | 'forum' | 'events'>('forum')
   const [selectedChat, setSelectedChat] = useState<ChatConversation | null>(null)
   const [showNewPost, setShowNewPost] = useState(false)
@@ -229,7 +229,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
           return timeB - timeA
         })
 
-        // Add showcase posts with images (Instagram-style)
+        // Add showcase posts (Twitter/X style - text-based)
         const showcasePosts: ForumPost[] = [
           {
             id: 'showcase-1',
@@ -251,8 +251,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                 likes: 8,
                 likedBy: []
               }
-            ],
-            imageUrl: 'https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg?auto=compress&cs=tinysrgb&w=800&h=800&dpr=2'
+            ]
           },
           {
             id: 'showcase-2',
@@ -264,8 +263,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
             tags: ['yoga', 'nature', 'selfcare'],
             likes: 89,
             likedBy: [],
-            replies: [],
-            imageUrl: 'https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800&h=800&dpr=2'
+            replies: []
           },
           {
             id: 'showcase-3',
@@ -296,8 +294,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
                 likes: 5,
                 likedBy: []
               }
-            ],
-            imageUrl: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800&h=800&dpr=2'
+            ]
           }
         ]
 
@@ -462,6 +459,29 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       alert('Please log in to like posts')
       return
     }
+    
+    // Skip Firebase update for showcase posts (mock data)
+    if (post.id.startsWith('showcase-')) {
+      // Update local state for showcase posts
+      setForumPosts(prevPosts => 
+        prevPosts.map(p => {
+          if (p.id === post.id) {
+            const isLiked = p.likedBy.includes(currentUser.uid)
+            return {
+              ...p,
+              likes: isLiked ? p.likes - 1 : p.likes + 1,
+              likedBy: isLiked 
+                ? p.likedBy.filter(id => id !== currentUser.uid)
+                : [...p.likedBy, currentUser.uid]
+            }
+          }
+          return p
+        })
+      )
+      return
+    }
+
+    // Update Firebase for real posts
     const postRef = doc(db, 'forum_posts', post.id)
     const isLiked = post.likedBy.includes(currentUser.uid)
 
@@ -472,6 +492,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       })
     } catch (error) {
       console.error('Error updating like:', error)
+      alert('Failed to update like. Please try again.')
     }
   }
 
@@ -480,9 +501,39 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       alert('Please log in to like replies')
       return
     }
-    const postRef = doc(db, 'forum_posts', post.id)
+    
     const isLiked = reply.likedBy.includes(currentUser.uid)
 
+    // Skip Firebase update for showcase posts (mock data)
+    if (post.id.startsWith('showcase-')) {
+      // Update local state for showcase posts
+      setForumPosts(prevPosts => 
+        prevPosts.map(p => {
+          if (p.id === post.id) {
+            return {
+              ...p,
+              replies: p.replies.map(r => {
+                if (r.id === reply.id) {
+                  return {
+                    ...r,
+                    likes: isLiked ? r.likes - 1 : r.likes + 1,
+                    likedBy: isLiked 
+                      ? r.likedBy.filter(id => id !== currentUser.uid)
+                      : [...r.likedBy, currentUser.uid]
+                  }
+                }
+                return r
+              })
+            }
+          }
+          return p
+        })
+      )
+      return
+    }
+
+    // Update Firebase for real posts
+    const postRef = doc(db, 'forum_posts', post.id)
     const updatedReplies = post.replies.map(r => {
       if (r.id === reply.id) {
         return {
@@ -498,6 +549,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       await updateDoc(postRef, { replies: updatedReplies })
     } catch (error) {
       console.error('Error updating reply like:', error)
+      alert('Failed to update reply like. Please try again.')
     }
   }
 
@@ -555,7 +607,6 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
     }
     if (!replyContent.trim()) return
 
-    const postRef = doc(db, 'forum_posts', postId)
     const newReply: ForumReply = {
       id: Date.now().toString(),
       content: replyContent.trim(),
@@ -566,6 +617,26 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       likedBy: []
     }
 
+    // Handle showcase posts (mock data) - update local state
+    if (postId.startsWith('showcase-')) {
+      setForumPosts(prevPosts => 
+        prevPosts.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              replies: [...p.replies, newReply]
+            }
+          }
+          return p
+        })
+      )
+      setReplyContent('')
+      setReplyingTo(null)
+      return
+    }
+
+    // Update Firebase for real posts
+    const postRef = doc(db, 'forum_posts', postId)
     try {
       await updateDoc(postRef, {
         replies: arrayUnion(newReply)
@@ -574,7 +645,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
       setReplyingTo(null)
     } catch (error) {
       console.error('Error replying:', error)
-      alert('Failed to reply')
+      alert('Failed to reply. Please try again.')
     }
   }
 
@@ -589,7 +660,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
         pink: 'from-pink-900/30 via-rose-900/20 to-slate-900/40',
         indigo: 'from-indigo-900/30 via-purple-900/20 to-slate-900/40'
       }
-      return gradients[colorTheme] || gradients.purple
+      return gradients[theme.colorTheme] || gradients.purple
     } else {
       const gradients: Record<string, string> = {
         purple: 'from-purple-100/80 via-pink-100/60 to-blue-100/80',
@@ -599,7 +670,7 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
         pink: 'from-pink-100/80 via-rose-100/60 to-fuchsia-100/80',
         indigo: 'from-indigo-100/80 via-purple-100/60 to-violet-100/80'
       }
-      return gradients[colorTheme] || gradients.purple
+      return gradients[theme.colorTheme] || gradients.purple
     }
   }
 
@@ -798,180 +869,195 @@ export default function SharingScreen({ onNavigate }: SharingScreenProps) {
           </div>
         </div>
 
-        {/* Forum Tab - Instagram Style */}
+        {/* Forum Tab - Twitter/X Style (Text-based) */}
         {activeTab === 'forum' && (
           <div>
             {/* Forum Posts */}
-            <div className="space-y-6 pb-4">
+            <div className="space-y-3 pb-4">
               {forumPosts.map((post) => {
                 const isLiked = currentUser ? post.likedBy.includes(currentUser.uid) : false
                 return (
-                  <div key={post.id} className={`${glassBase} rounded-2xl overflow-hidden ${isDark ? 'shadow-lg hover:shadow-xl' : 'shadow-xl hover:shadow-2xl'} transition-all duration-200`}>
-                    {/* Instagram-style Post Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 dark:border-white/10">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full ${glassBase} flex items-center justify-center text-sm font-semibold flex-shrink-0`} style={{
-                          background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`,
-                          color: 'white'
-                        }}>
-                          {post.authorName.charAt(0).toUpperCase()}
+                  <div key={post.id} className={`${glassBase} rounded-xl p-4 ${isDark ? 'shadow-md hover:shadow-lg' : 'shadow-lg hover:shadow-xl'} transition-all duration-200`}>
+                    {/* Twitter-style Post Header - Compact */}
+                    <div className="flex items-start gap-3 mb-2">
+                      {/* Avatar */}
+                      <div className={`w-10 h-10 rounded-full ${glassBase} flex items-center justify-center text-sm font-semibold flex-shrink-0`} style={{
+                        background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`,
+                        color: 'white'
+                      }}>
+                        {post.authorName.charAt(0).toUpperCase()}
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Author name and timestamp on same line */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{post.authorName}</span>
+                          <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>·</span>
+                          <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{formatTimeAgo(post.timestamp)}</span>
                         </div>
-                        <div>
-                          <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{post.authorName}</span>
-                          <span className={`text-xs ml-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{formatTimeAgo(post.timestamp)}</span>
-                        </div>
-                      </div>
-                      <button className={`p-1.5 rounded-full transition-all ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/50'}`}>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    {/* Post Image */}
-                    {post.imageUrl && (
-                      <div className="relative w-full aspect-square bg-gray-900">
-                        <img
-                          src={post.imageUrl}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-
-                    {/* Action Buttons (Like, Comment, Share, Save) */}
-                    <div className="px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => handleLikePost(post)}
-                          className={`transition-all ${isLiked ? 'text-rose-500 scale-110' : isDark ? 'text-gray-300 hover:text-rose-400' : 'text-gray-600 hover:text-rose-500'}`}
-                        >
-                          <svg className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
-                          className={`transition-all ${isDark ? 'text-gray-300 hover:text-gray-100' : 'text-gray-600 hover:text-gray-800'}`}
-                        >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                        </button>
-                        <button className={`transition-all ${isDark ? 'text-gray-300 hover:text-gray-100' : 'text-gray-600 hover:text-gray-800'}`}>
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <button className={`transition-all ${isDark ? 'text-gray-300 hover:text-gray-100' : 'text-gray-600 hover:text-gray-800'}`}>
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    {/* Likes Count */}
-                    <div className="px-4 pb-2">
-                      <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {post.likes} {post.likes === 1 ? 'like' : 'likes'}
-                      </span>
-                    </div>
-
-                    {/* Caption */}
-                    <div className="px-4 pb-2">
-                      <div className="flex items-start gap-2">
-                        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{post.authorName}</span>
-                        <p className={`text-sm flex-1 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                        
+                        {/* Post Content - Main focus */}
+                        <p className={`text-sm leading-relaxed mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                           {post.content}
                         </p>
-                      </div>
-                    </div>
-
-                    {/* View Comments */}
-                    {post.replies.length > 0 && (
-                      <button
-                        onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
-                        className={`px-4 pb-2 text-sm ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors`}
-                      >
-                        View all {post.replies.length} {post.replies.length === 1 ? 'comment' : 'comments'}
-                      </button>
-                    )}
-
-                    {/* Comments Section */}
-                    {post.replies.length > 0 && (
-                      <div className={`px-4 pb-3 space-y-2 border-t ${isDark ? 'border-white/10' : 'border-gray-300/60'} pt-3`}>
-                        {post.replies.slice(0, 2).map((reply) => (
-                          <div key={reply.id} className="flex items-start gap-2">
-                            <div className={`w-7 h-7 rounded-full ${glassBase} flex items-center justify-center text-xs flex-shrink-0`} style={{
-                              background: `linear-gradient(135deg, ${colors.gradientFrom}40 0%, ${colors.gradientTo}40 100%)`
-                            }}>
-                              {reply.authorName.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{reply.authorName}</span>
-                                <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{formatTimeAgo(reply.timestamp)}</span>
-                              </div>
-                              <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{reply.content}</p>
-                            </div>
-                            <button
-                              onClick={() => handleLikeReply(post, reply)}
-                              className={`p-1 transition-all ${currentUser && reply.likedBy.includes(currentUser.uid) ? 'text-rose-500' : isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-400 hover:text-rose-500'}`}
-                            >
-                              <svg className={`w-4 h-4 ${currentUser && reply.likedBy.includes(currentUser.uid) ? 'fill-current' : ''}`} fill={currentUser && reply.likedBy.includes(currentUser.uid) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                              </svg>
-                            </button>
+                        
+                        {/* Tags if present */}
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {post.tags.map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className={`text-xs px-2 py-0.5 rounded-full ${glassBase} ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                                style={{
+                                  background: isDark 
+                                    ? `linear-gradient(135deg, ${colors.gradientFrom}20 0%, ${colors.gradientTo}20 100%)`
+                                    : `linear-gradient(135deg, ${colors.gradientFrom}15 0%, ${colors.gradientTo}15 100%)`
+                                }}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {/* Comment Input */}
-                    {replyingTo === post.id && (
-                      <div className={`px-4 py-3 border-t ${isDark ? 'border-white/10' : 'border-gray-300/60'}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-full ${glassBase} flex items-center justify-center text-xs flex-shrink-0`} style={{
-                            background: `linear-gradient(135deg, ${colors.gradientFrom}40 0%, ${colors.gradientTo}40 100%)`
-                          }}>
-                            {currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                          <input
-                            type="text"
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                            placeholder="Add a comment..."
-                            className={`flex-1 px-3 py-2 ${glassBase} rounded-full text-sm focus:outline-none transition-all ${isDark ? 'text-gray-100 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}`}
-                            style={{
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : `rgba(${colors.gradientFrom.replace('#', '').match(/.{2}/g)?.map(x => parseInt(x, 16)).join(', ') || '157, 124, 243'}, 0.2)`
-                            }}
-                            autoFocus
-                          />
+                        {/* Action Buttons - Twitter style */}
+                        <div className="flex items-center justify-between max-w-md pt-1">
+                          {/* Reply Button */}
                           <button
-                            onClick={() => handleReplyPost(post.id)}
-                            disabled={!replyContent.trim()}
-                            className={`px-4 py-2 text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-all rounded-full`}
-                            style={{ 
-                              color: replyContent.trim() ? colors.primary : (isDark ? '#9ca3af' : '#6b7280'),
-                              background: replyContent.trim() ? `linear-gradient(135deg, ${colors.gradientFrom}20 0%, ${colors.gradientTo}20 100%)` : 'transparent'
-                            }}
+                            onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+                            className={`flex items-center gap-1.5 group transition-all ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-500'}`}
                           >
-                            Post
+                            <svg className="w-5 h-5 group-hover:bg-blue-500/10 rounded-full p-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            {post.replies.length > 0 && (
+                              <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{post.replies.length}</span>
+                            )}
                           </button>
+
+                          {/* Share/Retweet Button */}
+                          <button className={`flex items-center gap-1.5 group transition-all ${isDark ? 'text-gray-400 hover:text-green-400' : 'text-gray-500 hover:text-green-500'}`}>
+                            <svg className="w-5 h-5 group-hover:bg-green-500/10 rounded-full p-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                          </button>
+
+                          {/* Like Button */}
                           <button
-                            onClick={() => {
-                              setReplyingTo(null)
-                              setReplyContent('')
-                            }}
-                            className={`p-1.5 ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'} transition-colors`}
+                            onClick={() => handleLikePost(post)}
+                            className={`flex items-center gap-1.5 group transition-all ${isLiked ? 'text-rose-500' : isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-500 hover:text-rose-500'}`}
                           >
-                            ✕
+                            <svg className={`w-5 h-5 group-hover:bg-rose-500/10 rounded-full p-1 transition-all ${isLiked ? 'fill-current' : ''}`} fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            {post.likes > 0 && (
+                              <span className={`text-xs ${isLiked ? 'text-rose-500' : isDark ? 'text-gray-500' : 'text-gray-500'}`}>{post.likes}</span>
+                            )}
+                          </button>
+
+                          {/* More Options */}
+                          <button className={`p-1 rounded-full transition-all ${isDark ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/50'}`}>
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
                           </button>
                         </div>
+
+                        {/* Replies Section - Show inline */}
+                        {post.replies.length > 0 && (
+                          <div className={`mt-3 pt-3 border-t ${isDark ? 'border-white/10' : 'border-gray-300/60'} space-y-3`}>
+                            {post.replies.slice(0, 3).map((reply) => {
+                              const isReplyLiked = currentUser && reply.likedBy.includes(currentUser.uid)
+                              return (
+                                <div key={reply.id} className="flex items-start gap-2 pl-2">
+                                  <div className={`w-7 h-7 rounded-full ${glassBase} flex items-center justify-center text-xs flex-shrink-0`} style={{
+                                    background: `linear-gradient(135deg, ${colors.gradientFrom}40 0%, ${colors.gradientTo}40 100%)`
+                                  }}>
+                                    {reply.authorName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                      <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{reply.authorName}</span>
+                                      <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>·</span>
+                                      <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{formatTimeAgo(reply.timestamp)}</span>
+                                    </div>
+                                    <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{reply.content}</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      <button
+                                        onClick={() => handleLikeReply(post, reply)}
+                                        className={`flex items-center gap-1 transition-all ${isReplyLiked ? 'text-rose-500' : isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-400 hover:text-rose-500'}`}
+                                      >
+                                        <svg className={`w-3.5 h-3.5 ${isReplyLiked ? 'fill-current' : ''}`} fill={isReplyLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                        {reply.likes > 0 && (
+                                          <span className={`text-[10px] ${isReplyLiked ? 'text-rose-500' : isDark ? 'text-gray-500' : 'text-gray-500'}`}>{reply.likes}</span>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                            {post.replies.length > 3 && (
+                              <button
+                                onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+                                className={`text-xs ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors pl-9`}
+                              >
+                                View {post.replies.length - 3} more {post.replies.length - 3 === 1 ? 'reply' : 'replies'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Reply Input - Inline */}
+                        {replyingTo === post.id && (
+                          <div className={`mt-3 pt-3 border-t ${isDark ? 'border-white/10' : 'border-gray-300/60'}`}>
+                            <div className="flex items-start gap-2">
+                              <div className={`w-7 h-7 rounded-full ${glassBase} flex items-center justify-center text-xs flex-shrink-0`} style={{
+                                background: `linear-gradient(135deg, ${colors.gradientFrom}40 0%, ${colors.gradientTo}40 100%)`
+                              }}>
+                                {currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                              <div className="flex-1 flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={replyContent}
+                                  onChange={(e) => setReplyContent(e.target.value)}
+                                  placeholder="Post your reply..."
+                                  className={`flex-1 px-3 py-2 ${glassBase} rounded-full text-sm focus:outline-none transition-all ${isDark ? 'text-gray-100 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}`}
+                                  style={{
+                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : `rgba(${colors.gradientFrom.replace('#', '').match(/.{2}/g)?.map(x => parseInt(x, 16)).join(', ') || '157, 124, 243'}, 0.2)`
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleReplyPost(post.id)}
+                                  disabled={!replyContent.trim()}
+                                  className={`px-4 py-2 text-sm font-semibold rounded-full disabled:opacity-50 hover:opacity-90 transition-all`}
+                                  style={{ 
+                                    color: replyContent.trim() ? 'white' : (isDark ? '#9ca3af' : '#6b7280'),
+                                    background: replyContent.trim() ? `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)` : 'transparent'
+                                  }}
+                                >
+                                  Reply
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setReplyingTo(null)
+                                    setReplyContent('')
+                                  }}
+                                  className={`p-1.5 ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'} transition-colors`}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 )
               })}

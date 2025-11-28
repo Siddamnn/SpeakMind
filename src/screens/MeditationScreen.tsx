@@ -7,11 +7,17 @@ import { IoFitness, IoMoon, IoHeart, IoHappy, IoPeople, IoSparkles, IoFlame, IoB
 // Scroll animation hook
 const useScrollAnimation = () => {
   const [visibleItems, setVisibleItems] = useState<Set<string>>(new Set())
+  const [observerReady, setObserverReady] = useState(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
+        // Mark observer as ready after first callback
+        if (!observerReady) {
+          setObserverReady(true)
+        }
+        
         entries.forEach((entry) => {
           const id = entry.target.getAttribute('data-tile-id')
           if (!id) return
@@ -45,7 +51,7 @@ const useScrollAnimation = () => {
         observerRef.current.disconnect()
       }
     }
-  }, [])
+  }, [observerReady])
 
   const observeElement = useCallback((element: HTMLElement | null) => {
     if (!element || !observerRef.current) return
@@ -53,7 +59,7 @@ const useScrollAnimation = () => {
     observerRef.current.observe(element)
   }, [])
 
-  return { visibleItems, observeElement }
+  return { visibleItems, observeElement, observerReady }
 }
 
 interface Exercise {
@@ -79,7 +85,7 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
   const { colors, isDark } = useTheme();
   
   // Scroll animation for tiles
-  const { visibleItems, observeElement } = useScrollAnimation()
+  const { visibleItems, observeElement, observerReady } = useScrollAnimation()
   const tileRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
   
   // Windows 8-style tiles with varied sizes for organized layout
@@ -175,7 +181,7 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       descriptionKey: 'meditation.sleepStoriesDesc',
       category: 'sleep',
       duration: 20,
-      image: 'https://images.pexels.com/photos/18554368/pexels-photo-18554368.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2',
+      image: '/meditation/pexels-photo-3759657.webp', // Using local image instead of remote URL
       size: 'wide',
       customRowSpan: 2, // 15% height increase - use row-span-2 for proper spacing
       color: 'from-indigo-500 to-purple-600',
@@ -325,7 +331,9 @@ const MeditationScreen = ({ onNavigate }: MeditationScreenProps = {}) => {
       <div className="px-4">
         <div className="grid grid-cols-2 gap-3 auto-rows-[100px]" style={{ gridAutoFlow: 'dense' }}>
           {exercises.map((exercise) => {
-            const isVisible = visibleItems.has(exercise.id)
+            // Only apply blur if observer is ready AND item is not visible
+            // This prevents initial blur on mount before observer initializes
+            const isVisible = !observerReady || visibleItems.has(exercise.id)
             return (
               <button
                 key={exercise.id}

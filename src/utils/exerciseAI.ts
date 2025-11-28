@@ -1,250 +1,205 @@
 // AI-powered exercise content generation using Gemini
-import { callGeminiAPI } from './geminiAPI';
+import { callGeminiAPI } from './geminiAPI'
 
-export interface ExerciseContent {
-  instruction: string;
-  tips?: string[];
-  encouragement?: string;
-  personalized?: string;
+export interface ExerciseAIContent {
+  personalizedInstruction: string
+  tips: string[]
+  encouragement: string
+  reflection?: string
 }
 
 /**
- * Generate dynamic stress relief technique content
+ * Generate personalized exercise content using Gemini AI
  */
-export const generateStressTechnique = async (
-  techniqueName: string,
-  userProgress?: number
-): Promise<ExerciseContent> => {
-  const prompt = `You are a stress relief expert. Generate a personalized, step-by-step instruction for the "${techniqueName}" technique. 
-  
-Context: User is at step ${userProgress || 1} of a stress relief session.
-
+export const generateExerciseContent = async (
+  exerciseType: 'stress' | 'anxiety' | 'mood' | 'confidence',
+  techniqueTitle: string,
+  userContext?: string
+): Promise<ExerciseAIContent> => {
+  const prompts = {
+    stress: `You are a stress relief expert. Generate personalized guidance for the technique "${techniqueTitle}". 
 Provide:
-1. A clear, encouraging instruction (2-3 sentences)
-2. 2-3 practical tips specific to this technique
-3. A brief encouragement message
+1. A personalized instruction (2-3 sentences, encouraging and clear)
+2. 3 practical tips (short, actionable)
+3. An encouraging message (1 sentence, supportive)
+${userContext ? `User context: ${userContext}` : ''}
+Format as JSON: {"instruction": "...", "tips": ["...", "...", "..."], "encouragement": "..."}`,
 
-Format as JSON: {"instruction": "...", "tips": ["...", "..."], "encouragement": "..."}`;
+    anxiety: `You are an anxiety relief specialist. Generate personalized guidance for the technique "${techniqueTitle}". 
+Provide:
+1. A calming, personalized instruction (2-3 sentences, reassuring)
+2. 3 grounding tips (short, practical)
+3. A supportive encouragement message (1 sentence, calming)
+${userContext ? `User context: ${userContext}` : ''}
+Format as JSON: {"instruction": "...", "tips": ["...", "...", "..."], "encouragement": "..."}`,
 
-  const response = await callGeminiAPI(prompt);
+    mood: `You are a mood enhancement coach. Generate personalized guidance for the activity "${techniqueTitle}". 
+Provide:
+1. An uplifting, personalized instruction (2-3 sentences, positive)
+2. 3 mood-boosting tips (short, energizing)
+3. An encouraging message (1 sentence, motivating)
+${userContext ? `User context: ${userContext}` : ''}
+Format as JSON: {"instruction": "...", "tips": ["...", "...", "..."], "encouragement": "..."}`,
+
+    confidence: `You are a confidence building expert. Generate personalized guidance for the exercise "${techniqueTitle}". 
+Provide:
+1. An empowering, personalized instruction (2-3 sentences, confidence-building)
+2. 3 confidence tips (short, empowering)
+3. An encouraging message (1 sentence, affirming)
+${userContext ? `User context: ${userContext}` : ''}
+Format as JSON: {"instruction": "...", "tips": ["...", "...", "..."], "encouragement": "..."}`
+  }
+
+  const prompt = prompts[exerciseType]
   
-  if (response.success && response.text) {
-    try {
-      // Try to parse JSON response
-      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      // Fallback to text parsing
-    }
+  try {
+    const response = await callGeminiAPI(prompt)
     
-    return {
-      instruction: response.text.substring(0, 200),
-      tips: ['Focus on your breath', 'Take your time', 'Be gentle with yourself'],
+    if (response.success && response.text) {
+      // Try to parse JSON from response
+      const jsonMatch = response.text.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        return {
+          personalizedInstruction: parsed.instruction || '',
+          tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+          encouragement: parsed.encouragement || '',
+        }
+      }
+      
+      // Fallback: extract content from text response
+      return parseTextResponse(response.text)
+    }
+  } catch (error) {
+    console.error('Error generating exercise content:', error)
+  }
+
+  // Fallback content
+  return getFallbackContent(exerciseType, techniqueTitle)
+}
+
+/**
+ * Generate post-exercise reflection using Gemini AI
+ */
+export const generateExerciseReflection = async (
+  exerciseType: 'stress' | 'anxiety' | 'mood' | 'confidence',
+  completedTechniques: string[]
+): Promise<string> => {
+  const prompt = `You are a wellness coach. The user just completed ${exerciseType} relief exercises: ${completedTechniques.join(', ')}.
+Generate a brief, personalized reflection message (2-3 sentences) that:
+- Acknowledges their effort
+- Highlights the benefits
+- Encourages continued practice
+Be warm, supportive, and specific.`
+
+  try {
+    const response = await callGeminiAPI(prompt)
+    if (response.success && response.text) {
+      // Extract first 2-3 sentences
+      const sentences = response.text.match(/[^.!?]+[.!?]+/g) || []
+      return sentences.slice(0, 3).join(' ').trim()
+    }
+  } catch (error) {
+    console.error('Error generating reflection:', error)
+  }
+
+  return getFallbackReflection(exerciseType)
+}
+
+/**
+ * Generate real-time encouragement during exercise
+ */
+export const generateEncouragement = async (
+  exerciseType: 'stress' | 'anxiety' | 'mood' | 'confidence',
+  timeRemaining: number,
+  techniqueTitle: string
+): Promise<string> => {
+  const prompts = {
+    stress: `Generate a brief, encouraging message (1 sentence) for someone doing "${techniqueTitle}" with ${timeRemaining} seconds remaining. Be supportive and calming.`,
+    anxiety: `Generate a brief, reassuring message (1 sentence) for someone doing "${techniqueTitle}" with ${timeRemaining} seconds remaining. Be calming and safe.`,
+    mood: `Generate a brief, uplifting message (1 sentence) for someone doing "${techniqueTitle}" with ${timeRemaining} seconds remaining. Be positive and energizing.`,
+    confidence: `Generate a brief, empowering message (1 sentence) for someone doing "${techniqueTitle}" with ${timeRemaining} seconds remaining. Be affirming and confident.`
+  }
+
+  try {
+    const response = await callGeminiAPI(prompts[exerciseType])
+    if (response.success && response.text) {
+      // Extract first sentence
+      const sentence = response.text.match(/[^.!?]+[.!?]+/)?.[0] || response.text.split('.')[0]
+      return sentence.trim()
+    }
+  } catch (error) {
+    console.error('Error generating encouragement:', error)
+  }
+
+  return getFallbackEncouragement(exerciseType)
+}
+
+// Helper functions
+function parseTextResponse(text: string): ExerciseAIContent {
+  const lines = text.split('\n').filter(l => l.trim())
+  const instruction = lines.find(l => l.toLowerCase().includes('instruction') || l.length > 50) || lines[0] || ''
+  const tips: string[] = []
+  const encouragement = lines.find(l => l.toLowerCase().includes('encourag') || l.includes('✨')) || ''
+
+  lines.forEach(line => {
+    if (line.match(/^[-•*]\s/) || line.match(/^\d+\./)) {
+      tips.push(line.replace(/^[-•*]\s/, '').replace(/^\d+\.\s/, '').trim())
+    }
+  })
+
+  return {
+    personalizedInstruction: instruction,
+    tips: tips.length > 0 ? tips : ['Take your time', 'Be gentle with yourself', 'You\'re doing great'],
+    encouragement: encouragement || 'Keep going, you\'re doing amazing!'
+  }
+}
+
+function getFallbackContent(exerciseType: string, techniqueTitle: string): ExerciseAIContent {
+  const fallbacks = {
+    stress: {
+      personalizedInstruction: `Let's practice ${techniqueTitle}. Take your time and focus on the present moment.`,
+      tips: ['Breathe naturally', 'Stay present', 'Be patient with yourself'],
       encouragement: 'You\'re doing great! Keep going.'
-    };
-  }
-  
-  return {
-    instruction: `Practice the ${techniqueName} technique. Focus on your breath and stay present.`,
-    tips: ['Take deep breaths', 'Stay in the moment'],
-    encouragement: 'You\'re making progress!'
-  };
-};
-
-/**
- * Generate dynamic sleep story content
- */
-export const generateSleepStory = async (
-  storyTheme: string,
-  currentLine: number,
-  totalLines: number
-): Promise<string> => {
-  const prompt = `You are a sleep story narrator. Continue a peaceful sleep story about "${storyTheme}".
-  
-Current progress: Line ${currentLine} of ${totalLines}
-Previous context: The story is about finding peace and tranquility.
-
-Generate the next 1-2 sentences that are:
-- Calming and peaceful
-- Descriptive and immersive
-- Suitable for helping someone fall asleep
-- Flows naturally from a peaceful narrative
-
-Keep it brief (1-2 sentences max).`;
-
-  const response = await callGeminiAPI(prompt);
-  
-  if (response.success && response.text) {
-    // Clean up the response
-    let story = response.text.trim();
-    // Remove quotes if present
-    story = story.replace(/^["']|["']$/g, '');
-    return story.substring(0, 150);
-  }
-  
-  return `The gentle rhythm continues, bringing you deeper into a state of peace and relaxation.`;
-};
-
-/**
- * Generate dynamic anxiety relief guidance
- */
-export const generateAnxietyGuidance = async (
-  techniqueName: string,
-  userState?: 'mild' | 'moderate' | 'severe'
-): Promise<ExerciseContent> => {
-  const prompt = `You are an anxiety relief specialist. Provide immediate, practical guidance for the "${techniqueName}" technique.
-  
-User's current state: ${userState || 'moderate'} anxiety
-
-Provide:
-1. A clear, reassuring instruction (2-3 sentences)
-2. Why this technique helps with anxiety
-3. A calming affirmation
-
-Format as JSON: {"instruction": "...", "tips": ["...", "..."], "encouragement": "..."}`;
-
-  const response = await callGeminiAPI(prompt);
-  
-  if (response.success && response.text) {
-    try {
-      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      // Fallback
-    }
-    
-    return {
-      instruction: response.text.substring(0, 200),
-      tips: ['You are safe', 'This feeling will pass', 'Focus on your breath'],
-      encouragement: 'You\'re taking care of yourself. That\'s powerful.'
-    };
-  }
-  
-  return {
-    instruction: `Practice ${techniqueName}. You are safe, and this moment will pass.`,
-    tips: ['Breathe slowly', 'You are in control'],
-    encouragement: 'You\'re doing exactly what you need to do.'
-  };
-};
-
-/**
- * Generate dynamic mood booster activity
- */
-export const generateMoodActivity = async (
-  activityName: string,
-  currentStep: number
-): Promise<ExerciseContent> => {
-  const prompt = `You are a positive psychology coach. Generate an engaging, uplifting instruction for "${activityName}" activity.
-  
-Current step: ${currentStep}
-Focus: Boosting mood and positive energy
-
-Provide:
-1. An encouraging, actionable instruction (2-3 sentences)
-2. Why this activity boosts mood
-3. A positive affirmation
-
-Format as JSON: {"instruction": "...", "tips": ["...", "..."], "encouragement": "..."}`;
-
-  const response = await callGeminiAPI(prompt);
-  
-  if (response.success && response.text) {
-    try {
-      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      // Fallback
-    }
-    
-    return {
-      instruction: response.text.substring(0, 200),
-      tips: ['Focus on the positive', 'Be present', 'Celebrate small wins'],
+    },
+    anxiety: {
+      personalizedInstruction: `Let's use ${techniqueTitle} to help you feel safe and grounded. You're safe here.`,
+      tips: ['You are safe', 'This feeling will pass', 'Focus on your breathing'],
+      encouragement: 'You\'re taking care of yourself. Keep going.'
+    },
+    mood: {
+      personalizedInstruction: `Let's boost your mood with ${techniqueTitle}. Focus on the positive energy.`,
+      tips: ['Focus on the positive', 'Be present', 'Feel the energy'],
       encouragement: 'You\'re building positive energy!'
-    };
-  }
-  
-  return {
-    instruction: `Engage with ${activityName}. Notice the positive feelings that arise.`,
-    tips: ['Stay present', 'Feel the joy'],
-    encouragement: 'You\'re creating positive change!'
-  };
-};
-
-/**
- * Generate dynamic social confidence exercise
- */
-export const generateConfidenceExercise = async (
-  exerciseName: string,
-  userLevel?: 'beginner' | 'intermediate' | 'advanced'
-): Promise<ExerciseContent> => {
-  const prompt = `You are a social confidence coach. Create a personalized exercise instruction for "${exerciseName}".
-  
-User level: ${userLevel || 'beginner'}
-
-Provide:
-1. A supportive, step-by-step instruction (2-3 sentences)
-2. Why this builds confidence
-3. A powerful affirmation
-
-Format as JSON: {"instruction": "...", "tips": ["...", "..."], "encouragement": "..."}`;
-
-  const response = await callGeminiAPI(prompt);
-  
-  if (response.success && response.text) {
-    try {
-      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      // Fallback
+    },
+    confidence: {
+      personalizedInstruction: `Let's build your confidence with ${techniqueTitle}. You are capable and strong.`,
+      tips: ['You are worthy', 'Your voice matters', 'Believe in yourself'],
+      encouragement: 'You\'re growing stronger!'
     }
-    
-    return {
-      instruction: response.text.substring(0, 200),
-      tips: ['You are worthy', 'Your voice matters', 'Be authentic'],
-      encouragement: 'You\'re building real confidence!'
-    };
   }
-  
-  return {
-    instruction: `Practice ${exerciseName}. Remember, you are capable and worthy.`,
-    tips: ['Be yourself', 'You have value'],
-    encouragement: 'You\'re growing in confidence!'
-  };
-};
 
-/**
- * Get real-time encouragement based on progress
- */
-export const getProgressEncouragement = async (
-  exerciseType: string,
-  progress: number,
-  total: number
-): Promise<string> => {
-  const percentage = Math.round((progress / total) * 100);
-  
-  const prompt = `Give a brief (1 sentence), encouraging message for someone who is ${percentage}% through a ${exerciseType} exercise. Be warm, supportive, and motivating.`;
+  return fallbacks[exerciseType as keyof typeof fallbacks] || fallbacks.stress
+}
 
-  const response = await callGeminiAPI(prompt);
-  
-  if (response.success && response.text) {
-    return response.text.trim().substring(0, 100);
+function getFallbackReflection(exerciseType: string): string {
+  const reflections = {
+    stress: 'You\'ve completed your stress relief exercises. Take a moment to notice how you feel. These techniques are always here when you need them.',
+    anxiety: 'You\'ve completed your anxiety relief sequence. You\'re safe, and you\'ve shown yourself that you can handle difficult moments.',
+    mood: 'You\'ve completed your mood-boosting activities! Keep that positive energy flowing throughout your day.',
+    confidence: 'You\'ve completed your confidence-building exercises! Remember, you are capable, worthy, and strong.'
   }
-  
-  const fallbacks = [
-    'You\'re making great progress!',
-    'Keep going, you\'re doing amazing!',
-    'You\'re almost there!',
-    'Every step counts!'
-  ];
-  
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
-};
 
+  return reflections[exerciseType as keyof typeof reflections] || reflections.stress
+}
+
+function getFallbackEncouragement(exerciseType: string): string {
+  const encouragements = {
+    stress: 'You\'re doing great! Keep focusing on your breathing.',
+    anxiety: 'You\'re safe. This feeling will pass.',
+    mood: 'Keep that positive energy flowing!',
+    confidence: 'You\'re growing stronger with each moment!'
+  }
+
+  return encouragements[exerciseType as keyof typeof encouragements] || encouragements.stress
+}
