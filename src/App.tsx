@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import BottomNavigation from './components/BottomNavigation'
+const BottomNavigation = lazy(() => import('./components/BottomNavigation'))
 import ErrorBoundary from './components/ErrorBoundary'
 
 // Lazy load all screens for better performance and code splitting
@@ -51,7 +51,7 @@ const LoadingScreen = () => (
   </div>
 )
 
-export type Screen = 
+export type Screen =
   | 'auth'
   | 'userOnboarding'
   | 'home'
@@ -137,11 +137,11 @@ const AppContent = () => {
 
   const handleAuthComplete = (wasSignup: boolean = false, user?: any) => {
     if (!user) return
-    
+
     // Check if user has completed onboarding (for both signup and login)
     const onboardingKey = `speakmind_user_onboarding_${user.uid}`
     const hasCompletedOnboarding = localStorage.getItem(onboardingKey)
-    
+
     if (wasSignup) {
       // New user signup - check if they need onboarding
       if (!hasCompletedOnboarding) {
@@ -154,7 +154,7 @@ const AppContent = () => {
       // If they've completed onboarding before, go to home
       // If not (shouldn't happen for existing users, but handle it), show onboarding
       if (hasCompletedOnboarding) {
-      setCurrentScreen('home')
+        setCurrentScreen('home')
       } else {
         // First time login (shouldn't normally happen, but handle gracefully)
         setCurrentScreen('userOnboarding')
@@ -221,7 +221,7 @@ const AppContent = () => {
         return <MindBodySync onNavigate={navigateToScreen} />
       case 'exercise-reflection-journal':
         return (
-          <ExerciseLayout 
+          <ExerciseLayout
             title="Reflection Journal"
             subtitle="Write one thought to clear your mind"
             backgroundImage="https://images.pexels.com/photos/5273009/pexels-photo-5273009.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&dpr=2"
@@ -259,15 +259,17 @@ const AppContent = () => {
   return (
     <div className="mobile-container min-h-screen overflow-auto">
       <ErrorBoundary>
-      <Suspense fallback={<LoadingScreen />}>
-        {renderScreen()}
-      </Suspense>
+        <Suspense fallback={<LoadingScreen />}>
+          {renderScreen()}
+        </Suspense>
       </ErrorBoundary>
       {showBottomNav && (
-        <BottomNavigation 
-          currentScreen={currentScreen} 
-          onNavigate={navigateToScreen} 
-        />
+        <Suspense fallback={null}>
+          <BottomNavigation
+            currentScreen={currentScreen}
+            onNavigate={navigateToScreen}
+          />
+        </Suspense>
       )}
     </div>
   )
@@ -278,9 +280,9 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <LanguageProvider>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>
