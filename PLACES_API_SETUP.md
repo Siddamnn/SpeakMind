@@ -19,16 +19,18 @@ GOOGLE_PLACES_API_KEY=your_actual_api_key_here
 ### 2. Google Cloud Platform Setup
 Ensure your Google Places API key has the following APIs enabled:
 
-- ✅ **Places API** (for place search)
-- ✅ **Places API (New)** (optional, for advanced features)
-- ✅ **Geocoding API** (optional, for coordinates)
+- ✅ **Places API** (for nearby search and place details)
+- ✅ **Geocoding API** (for converting addresses to coordinates - **REQUIRED**)
+- ✅ **Maps JavaScript API** (optional, for future map features)
+
+**IMPORTANT:** Both **Places API** and **Geocoding API** must be enabled for the Places feature to work.
 
 **API Restrictions (Recommended):**
-- Application restrictions: HTTP referrers
-- Website restrictions: 
+- Application restrictions: None (or HTTP referrers if you want to restrict)
+- Website restrictions (if using HTTP referrers): 
   - `https://your-domain.vercel.app/*`
   - `https://*.vercel.app/*` (for preview deployments)
-- API restrictions: Limit to "Places API"
+- API restrictions: Select "Places API" and "Geocoding API"
 
 ### 3. Production Features Implemented
 
@@ -40,6 +42,8 @@ Ensure your Google Places API key has the following APIs enabled:
 - **Success tracking**: Logs count and execution time
 
 #### ✨ Serverless Function Improvements  
+- **Two-step search**: Geocoding + Nearby Search for better accuracy
+- **Fallback mechanism**: Text search as backup if nearby search fails
 - **Request logging**: All requests logged with timestamps
 - **Timeout protection**: 8-second timeout per Google API call
 - **Parallel requests**: Religious and meditation APIs fetch multiple results simultaneously
@@ -120,7 +124,8 @@ fetch('https://your-domain.vercel.app/api/places/yoga', {
 **Expected Log Patterns (Production):**
 ```
 [Yoga API] Request for city: Mumbai, locality: Andheri
-[Yoga API] Search query: yoga meditation centers in Andheri, Mumbai, India
+[Yoga API] Geocoding location: Andheri, Mumbai, India
+[Yoga API] Location found: 19.1136, 72.8697
 [Yoga API] Google Places response status: OK
 [Yoga API] Success! Found 10 places in 1523ms
 ```
@@ -139,11 +144,13 @@ fetch('https://your-domain.vercel.app/api/places/yoga', {
 | Issue | Solution |
 |-------|----------|
 | "API key not configured" | Set `GOOGLE_PLACES_API_KEY` in Vercel env vars and redeploy |
+| "Failed to locate [city]" | Enable **Geocoding API** in Google Cloud Console - this is required! |
 | "OVER_QUERY_LIMIT" | Check Google Cloud Platform quotas and billing |
 | "Request timed out" | Google API is slow; timeout is 8s per request, 10-12s total |
 | "ZERO_RESULTS" | Normal - no places found in that locality |
 | Empty results | Check if locality/city name is spelled correctly |
 | CORS errors | Serverless functions have CORS enabled; check network tab |
+| "REQUEST_DENIED" | Enable both Places API AND Geocoding API in GCP |
 
 ### 8. Performance Expectations
 
