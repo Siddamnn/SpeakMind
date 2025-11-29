@@ -4,8 +4,7 @@ import { callGeminiAPI } from '../utils/geminiAPI'
 import { recommendVideos } from '../utils/youtubeAI'
 import type { VideoSuggestion } from '../utils/youtubeAI'
 import { saveUserContext, getUserContext } from '../utils/userContext'
-import { BsEmojiSmile } from 'react-icons/bs'
-import { CiCamera, CiImageOn } from 'react-icons/ci'
+import { CiCamera } from 'react-icons/ci'
 import { FaMicrophone } from 'react-icons/fa6'
 import { IoSendSharp, IoChevronBack, IoVolumeHigh, IoLanguage, IoPlay } from 'react-icons/io5'
 import { useTheme } from '../contexts/ThemeContext'
@@ -20,7 +19,7 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
   const [isLoading, setIsLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState<string | null>(null)
   const [videoSuggestions, setVideoSuggestions] = useState<VideoSuggestion[] | null>(null)
-  const [convoHistory, setConvoHistory] = useState<Array<{q: string; a: string}>>([])
+  const [convoHistory, setConvoHistory] = useState<Array<{ q: string; a: string }>>([])
   const [isRecording, setIsRecording] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [selectedLanguage, setSelectedLanguage] = useState('en')
@@ -106,23 +105,22 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
     const wantsVideos = videoTriggers.some(t => lowerQ.includes(t)) || timePattern.test(lowerQ)
 
     try {
-      const languagePrompt = selectedLanguage !== 'en' 
-        ? `Please respond in ${languages.find(l => l.code === selectedLanguage)?.name || 'English'}. ` 
+      const languagePrompt = selectedLanguage !== 'en'
+        ? `Please respond in ${languages.find(l => l.code === selectedLanguage)?.name || 'English'}. `
         : ''
-      
+
       // Add mood context to the prompt if available
-      const moodContext = userMood 
-        ? `The user is currently feeling ${userMood}. Please keep this in mind when responding. ` 
+      const moodContext = userMood
+        ? `The user is currently feeling ${userMood}. Please keep this in mind when responding. `
         : ''
-      
+
       const res = await callGeminiAPI(languagePrompt + moodContext + q)
       if (res.success && res.text) {
-        setAiResponse(res.text)
         setQuestion('')
-        
+
         // Save user context for personalized recommendations
         saveUserContext(q, res.text)
-        
+
         // push to conversation history for richer context and build next context immediately
         const nextConvo = [...convoHistory, { q, a: res.text as string }]
         setConvoHistory(nextConvo.slice(-8))
@@ -168,24 +166,24 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
       speechSynthesis.cancel()
       setIsSpeaking(true)
 
-  const utterance = new SpeechSynthesisUtterance(text)
-      
-  // Set language for speech synthesis
-  utterance.lang = selectedLanguage === 'zh' ? 'zh-CN' : 
-                      selectedLanguage === 'ar' ? 'ar-SA' :
-                      selectedLanguage === 'hi' ? 'hi-IN' :
-                      selectedLanguage === 'bn' ? 'bn-IN' :
-                      selectedLanguage === 'te' ? 'te-IN' :
-                      selectedLanguage === 'mr' ? 'mr-IN' :
-                      selectedLanguage === 'ta' ? 'ta-IN' :
-                      selectedLanguage === 'gu' ? 'gu-IN' :
+      const utterance = new SpeechSynthesisUtterance(text)
+
+      // Set language for speech synthesis
+      utterance.lang = selectedLanguage === 'zh' ? 'zh-CN' :
+        selectedLanguage === 'ar' ? 'ar-SA' :
+          selectedLanguage === 'hi' ? 'hi-IN' :
+            selectedLanguage === 'bn' ? 'bn-IN' :
+              selectedLanguage === 'te' ? 'te-IN' :
+                selectedLanguage === 'mr' ? 'mr-IN' :
+                  selectedLanguage === 'ta' ? 'ta-IN' :
+                    selectedLanguage === 'gu' ? 'gu-IN' :
                       selectedLanguage === 'kn' ? 'kn-IN' :
-                      selectedLanguage === 'ml' ? 'ml-IN' :
-                      selectedLanguage === 'pa' ? 'pa-IN' :
-                      selectedLanguage === 'or' ? 'or-IN' :
-                      selectedLanguage === 'ur' ? 'ur-PK' :
-                      selectedLanguage + '-' + selectedLanguage.toUpperCase()
-      
+                        selectedLanguage === 'ml' ? 'ml-IN' :
+                          selectedLanguage === 'pa' ? 'pa-IN' :
+                            selectedLanguage === 'or' ? 'or-IN' :
+                              selectedLanguage === 'ur' ? 'ur-PK' :
+                                selectedLanguage + '-' + selectedLanguage.toUpperCase()
+
       utterance.rate = 0.8
       utterance.pitch = 1
       utterance.volume = 1
@@ -292,13 +290,12 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
                       setSelectedLanguage(lang.code)
                       setShowLanguageMenu(false)
                     }}
-                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-card-hover flex items-center space-x-3 ${
-                      selectedLanguage === lang.code 
-                        ? isDark 
-                          ? 'bg-purple-900/30 text-purple-300' 
-                          : 'bg-purple-50 text-purple-700' 
-                        : 'text-gray-700 dark:text-dark-text'
-                    }`}
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-card-hover flex items-center space-x-3 ${selectedLanguage === lang.code
+                      ? isDark
+                        ? 'bg-purple-900/30 text-purple-300'
+                        : 'bg-purple-50 text-purple-700'
+                      : 'text-gray-700 dark:text-dark-text'
+                      }`}
                   >
                     <span className="text-lg">{lang.flag}</span>
                     <span className="text-sm font-medium">{lang.name}</span>
@@ -312,15 +309,15 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
 
       <div className="space-y-6 pb-6">
         {/* Voice Session Button */}
-        {(!aiResponse || convoHistory.length === 0) && (
+        {convoHistory.length === 0 && (
           <div className="px-4 pt-6">
             <button
               onClick={() => onNavigate('voiceSession')}
               className="w-full flex items-center justify-center gap-3 px-6 py-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
               </svg>
               <div className="text-left">
                 <div className="font-bold text-lg">Start Voice Session</div>
@@ -330,76 +327,82 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
           </div>
         )}
 
-        {/* AI Response Card */}
-        {aiResponse && (
-          <div className="px-4">
-            <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-5 border border-purple-100 dark:border-dark-border shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{
-                    background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
-                  }}>
-                    <span className="text-white text-xs font-bold">AI</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-900 dark:text-dark-text font-semibold text-sm block">AI Assistant</span>
-                    <span className="text-xs text-gray-500 dark:text-dark-text-secondary">
-                      {languages.find(l => l.code === selectedLanguage)?.flag} {languages.find(l => l.code === selectedLanguage)?.name}
-                    </span>
+        {/* Chat History */}
+        {convoHistory.length > 0 && (
+          <div className="px-4 space-y-4">
+            {convoHistory.map((msg, index) => (
+              <div key={index} className="space-y-3">
+                {/* User Message */}
+                <div className="flex justify-end">
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%] shadow-md">
+                    <p className="text-sm">{msg.q}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => speakResponse(aiResponse)}
-                  className={`p-2 rounded-full transition-all ${
-                    isSpeaking 
-                      ? isDark
-                        ? 'bg-purple-900/30 text-purple-300'
-                        : 'bg-purple-100 text-purple-600'
-                      : isDark
-                        ? 'bg-gray-800/30 hover:bg-purple-900/30 text-gray-300 hover:text-purple-300'
-                        : 'bg-gray-100 hover:bg-purple-100 text-gray-600 hover:text-purple-600'
-                  }`}
-                  disabled={isSpeaking}
-                >
-                  <IoVolumeHigh className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="text-gray-800 dark:text-dark-text text-sm leading-relaxed whitespace-pre-wrap mb-4">
-                {aiResponse}
-              </div>
-              {/* Video suggestions */}
-              {videoSuggestions && videoSuggestions.length > 0 && (
-                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-dark-border">
-                  <h3 className="text-xs font-semibold text-gray-700 dark:text-dark-text-secondary mb-3 uppercase tracking-wide">Recommended Videos</h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    {videoSuggestions.map(v => (
-                      <a 
-                        key={v.videoId} 
-                        href={v.url} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="flex items-center gap-3 p-3 bg-white dark:bg-dark-card rounded-xl border border-gray-100 dark:border-dark-border hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-md transition-all group"
+
+                {/* AI Response */}
+                <div className="flex justify-start">
+                  <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl rounded-tl-sm p-4 border border-purple-100 dark:border-dark-border shadow-lg max-w-[85%]">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center shadow-md" style={{
+                        background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`
+                      }}>
+                        <span className="text-white text-[10px] font-bold">AI</span>
+                      </div>
+                      <span className="text-gray-900 dark:text-dark-text font-semibold text-xs">AI Assistant</span>
+                      <button
+                        onClick={() => speakResponse(msg.a)}
+                        className={`ml-auto p-1 rounded-full transition-all ${isSpeaking
+                            ? isDark
+                              ? 'bg-purple-900/30 text-purple-300'
+                              : 'bg-purple-100 text-purple-600'
+                            : isDark
+                              ? 'bg-gray-800/30 hover:bg-purple-900/30 text-gray-300 hover:text-purple-300'
+                              : 'bg-gray-100 hover:bg-purple-100 text-gray-600 hover:text-purple-600'
+                          }`}
                       >
-                        <div className="relative w-28 h-20 flex-shrink-0 rounded-lg overflow-hidden">
-                          <img 
-                            src={v.thumbnails?.default?.url || v.thumbnails?.medium?.url || ''} 
-                            alt={v.title} 
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <IoPlay className="text-white text-2xl" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 dark:text-dark-text line-clamp-2 mb-1">{v.title}</div>
-                          <div className="text-xs text-gray-500 dark:text-dark-text-secondary">{v.channelTitle}</div>
-                        </div>
-                      </a>
-                    ))}
+                        <IoVolumeHigh className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="text-gray-800 dark:text-dark-text text-sm leading-relaxed whitespace-pre-wrap">
+                      {msg.a}
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            ))}
+
+            {/* Video suggestions for the last message */}
+            {videoSuggestions && videoSuggestions.length > 0 && (
+              <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-4 border border-purple-100 dark:border-dark-border shadow-lg">
+                <h3 className="text-xs font-semibold text-gray-700 dark:text-dark-text-secondary mb-3 uppercase tracking-wide">Recommended Videos</h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {videoSuggestions.map(v => (
+                    <a
+                      key={v.videoId}
+                      href={v.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-3 p-3 bg-white dark:bg-dark-card rounded-xl border border-gray-100 dark:border-dark-border hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-md transition-all group"
+                    >
+                      <div className="relative w-28 h-20 flex-shrink-0 rounded-lg overflow-hidden">
+                        <img
+                          src={v.thumbnails?.default?.url || v.thumbnails?.medium?.url || ''}
+                          alt={v.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <IoPlay className="text-white text-2xl" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 dark:text-dark-text line-clamp-2 mb-1">{v.title}</div>
+                        <div className="text-xs text-gray-500 dark:text-dark-text-secondary">{v.channelTitle}</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -407,34 +410,32 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
         <div className="px-4">
           <div className="bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 dark:border-dark-border shadow-lg">
             {/* Tips */}
-            {!aiResponse && (
+            {convoHistory.length === 0 && (
               <div className="mb-4 pb-4 border-b border-gray-100 dark:border-dark-border">
                 <div className="text-xs text-gray-500 dark:text-dark-text-secondary mb-2 font-medium">💡 Try asking:</div>
                 <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => setQuestion('Suggest me videos to deal with anxiety')}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      isDark
-                        ? 'bg-purple-900/30 text-purple-300 border-purple-700/50 hover:bg-purple-900/40'
-                        : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
-                    }`}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${isDark
+                      ? 'bg-purple-900/30 text-purple-300 border-purple-700/50 hover:bg-purple-900/40'
+                      : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                      }`}
                   >
                     Videos for anxiety
                   </button>
                   <button
                     onClick={() => setQuestion('Recommend a 20 minute mindfulness meditation')}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      isDark
-                        ? 'bg-gray-800/30 text-gray-300 border-gray-700/50 hover:bg-gray-800/40'
-                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                    }`}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${isDark
+                      ? 'bg-gray-800/30 text-gray-300 border-gray-700/50 hover:bg-gray-800/40'
+                      : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                      }`}
                   >
                     20 min meditation
                   </button>
                 </div>
               </div>
             )}
-            
+
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -444,39 +445,28 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
             />
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-dark-border">
               <div className="flex space-x-3 text-gray-400 dark:text-gray-500 items-center">
-                <button aria-label="emoji" className={`transition-colors p-1.5 rounded-lg ${
-                  isDark
-                    ? 'hover:text-purple-400 hover:bg-purple-900/30'
-                    : 'hover:text-purple-600 hover:bg-purple-50'
-                }`}>
-                  <BsEmojiSmile className="w-5 h-5" />
+                <button
+                  aria-label="share selfie"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors text-xs font-medium ${isDark
+                    ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-900/50'
+                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+                    }`}
+                >
+                  <CiCamera className="w-4 h-4" />
+                  Share a Selfie
                 </button>
-                <button aria-label="camera" className={`transition-colors p-1.5 rounded-lg ${
-                  isDark
-                    ? 'hover:text-purple-400 hover:bg-purple-900/30'
-                    : 'hover:text-purple-600 hover:bg-purple-50'
-                }`}>
-                  <CiCamera className="w-5 h-5" />
-                </button>
-                <button aria-label="image" className={`transition-colors p-1.5 rounded-lg ${
-                  isDark
-                    ? 'hover:text-purple-400 hover:bg-purple-900/30'
-                    : 'hover:text-purple-600 hover:bg-purple-50'
-                }`}>
-                  <CiImageOn className="w-5 h-5" />
-                </button>
-                <button 
-                  aria-label="microphone" 
-                  onClick={toggleRecording} 
-                  className={`transition-all p-1.5 rounded-lg ${
-                    isRecording 
-                      ? isDark
-                        ? 'text-purple-300 bg-purple-900/30'
-                        : 'text-purple-600 bg-purple-100'
-                      : isDark
-                        ? 'hover:text-purple-400 hover:bg-purple-900/30'
-                        : 'hover:text-purple-600 hover:bg-purple-50'
-                  }`}
+
+                <button
+                  aria-label="microphone"
+                  onClick={toggleRecording}
+                  className={`transition-all p-1.5 rounded-lg ${isRecording
+                    ? isDark
+                      ? 'text-purple-300 bg-purple-900/30'
+                      : 'text-purple-600 bg-purple-100'
+                    : isDark
+                      ? 'hover:text-purple-400 hover:bg-purple-900/30'
+                      : 'hover:text-purple-600 hover:bg-purple-50'
+                    }`}
                 >
                   <FaMicrophone className="w-5 h-5" />
                 </button>
@@ -484,11 +474,10 @@ export default function AskQuestionScreen({ onNavigate }: AskQuestionScreenProps
               <button
                 onClick={handleSend}
                 disabled={isLoading || !question.trim()}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg ${
-                  isLoading || !question.trim() 
-                    ? 'bg-gray-300 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105'
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg ${isLoading || !question.trim()
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-105'
+                  }`}
                 aria-label="send"
               >
                 {isLoading ? (
